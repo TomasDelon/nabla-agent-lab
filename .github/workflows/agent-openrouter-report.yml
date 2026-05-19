@@ -6,7 +6,7 @@ on:
       model:
         description: OpenRouter model id
         required: false
-        default: deepseek/deepseek-v4-flash:free
+        default: auto-deepseek-free
 
 permissions:
   contents: write
