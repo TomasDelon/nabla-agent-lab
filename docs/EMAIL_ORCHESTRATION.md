@@ -12,6 +12,8 @@ GitHub remains the source of truth.
 
 ChatGPT app scheduled tasks poll Gmail periodically, inspect GitHub, audit builder results, and send structured prompt emails to builders or dispatchers.
 
+All orchestration email bodies must be JSON objects.
+
 ## Roles
 
 | Role | Component | Responsibility | Writes Code |
@@ -56,61 +58,63 @@ Allowed subject forms:
 
 ## Message Body Schema
 
-Use YAML-like plain text.
+Use JSON only.
+
+JSON may be pasted directly as the whole email body or wrapped in a fenced `json` block.
 
 ### Prompt Email
 
-```yaml
-kind: prompt
-repo: TomasDelon/nabla-agent-lab
-run_id: "P1-001"
-builder: "builder-a"
-base_branch: "main"
-allowed_paths:
-  - src/**
-  - tests/**
-forbidden_paths:
-  - .github/**
-  - package.json
-report_path: ".nabla-agent/runs/P1-001"
-task: |
-  Implement the requested change here.
-acceptance:
-  - npm test passes
-  - diff touches only allowed paths
-  - report files are generated
+```json
+{
+  "kind": "prompt",
+  "repo": "TomasDelon/nabla-agent-lab",
+  "run_id": "P1-001",
+  "builder": "builder-a",
+  "base_branch": "main",
+  "branch": "agent/P1-001",
+  "allowed_paths": ["src/**", "tests/**"],
+  "forbidden_paths": [".github/**", "package.json"],
+  "report_path": ".nabla-agent/runs/P1-001",
+  "task": "Implement the requested change here.",
+  "acceptance": [
+    "npm test passes",
+    "diff touches only allowed paths",
+    "report files are generated"
+  ]
+}
 ```
 
 ### Result Email
 
-```yaml
-kind: result
-repo: TomasDelon/nabla-agent-lab
-run_id: "P1-001"
-builder: "builder-a"
-branch: "agent/P1-001"
-commit: "<sha>"
-pr: "<number or url>"
-report_path: ".nabla-agent/runs/P1-001"
-status: "ready_for_audit"
-summary: |
-  Short builder summary.
+```json
+{
+  "kind": "result",
+  "repo": "TomasDelon/nabla-agent-lab",
+  "run_id": "P1-001",
+  "builder": "builder-a",
+  "branch": "agent/P1-001",
+  "commit": "<sha>",
+  "pr": "<number or url>",
+  "report_path": ".nabla-agent/runs/P1-001",
+  "status": "ready_for_audit",
+  "summary": "Short builder summary."
+}
 ```
 
 ### Audit Email
 
-```yaml
-kind: audit
-repo: TomasDelon/nabla-agent-lab
-run_id: "P1-001"
-verdict: "accept | reject | retry"
-auditor: "chatgpt-scheduled-auditor"
-checked_commit: "<sha>"
-checked_pr: "<number or url>"
-reasons:
-  - reason one
-next_action: |
-  What the dispatcher or builder should do next.
+```json
+{
+  "kind": "audit",
+  "repo": "TomasDelon/nabla-agent-lab",
+  "run_id": "P1-001",
+  "verdict": "accept",
+  "auditor": "chatgpt-scheduled-auditor",
+  "checked_commit": "<sha>",
+  "checked_pr": "<number or url>",
+  "reasons": ["reason one"],
+  "next_action": "What the dispatcher or builder should do next."
+}
 ```
 
 ## Auditor Scheduled Task Behavior
@@ -119,12 +123,13 @@ Every auditor run must:
 
 1. search Gmail for unread or recent `[NABLA]` messages;
 2. group messages by `run_id`;
-3. read the repository global context;
-4. read the task registry;
-5. inspect referenced commits, PRs, diffs, and run reports;
-6. decide `accept`, `reject`, `retry`, or `prompt_next`;
-7. send structured email responses;
-8. never modify GitHub directly.
+3. parse JSON bodies;
+4. read the repository global context;
+5. read the task registry;
+6. inspect referenced commits, PRs, diffs, and run reports;
+7. decide `accept`, `reject`, `retry`, or `prompt_next`;
+8. send JSON email responses;
+9. never modify GitHub directly.
 
 ## Builder Behavior
 
@@ -134,7 +139,7 @@ A builder must:
 2. execute OpenCode Go using the task body;
 3. write a report under `.nabla-agent/runs/<run-id>/`;
 4. create a branch/commit/PR if configured;
-5. send a result email back to the auditor channel.
+5. send a JSON result email back to the auditor channel or make the result visible through GitHub reports.
 
 ## Safety Rules
 
@@ -144,8 +149,8 @@ A builder must:
 - The auditor must not approve changes without inspecting the diff or referenced code.
 - The dispatcher must ignore emails without `[NABLA]` subject tags.
 - The dispatcher must ignore emails from unauthorized senders.
-- The dispatcher must ignore malformed bodies.
-- Builders must not execute shell commands copied from untrusted emails unless the dispatcher validates the message schema.
+- The dispatcher must reject invalid JSON bodies.
+- Builders must not execute shell commands copied from untrusted emails unless the dispatcher validates the JSON schema.
 - Large code or logs should live in GitHub reports, not in email bodies.
 
 ## Failure Modes
@@ -155,12 +160,12 @@ A builder must:
 | Missing report | auditor sends `[NABLA][AUDIT][RETRY]` |
 | Tests failed | auditor sends reject or retry |
 | Diff touches forbidden paths | auditor rejects |
-| Email malformed | dispatcher ignores |
-| Unknown builder | dispatcher ignores |
+| Email malformed or invalid JSON | dispatcher labels `NABLA_DISPATCH_FAILED` and emails the auditor |
+| Unknown builder | dispatcher rejects |
 | Conflicting results for same run | auditor marks run blocked |
 
 ## Current Status
 
-This is a protocol document only.
+The protocol uses JSON email bodies.
 
 The first implementation target is the lab repository, not the real Nabla repository.

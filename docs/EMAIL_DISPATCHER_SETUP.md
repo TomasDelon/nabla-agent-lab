@@ -6,15 +6,15 @@ This document explains how to connect Gmail prompt emails to GitHub Actions/Open
 
 ```text
 ChatGPT app auditor
-  sends [NABLA][PROMPT][BUILDER-A][RUN:<id>] email
+  sends [NABLA][PROMPT][BUILDER-A][RUN:<id>] email with JSON body
       ↓
 Google Apps Script bridge
   polls Gmail for prompt emails
-  parses the YAML-like body
+  parses and validates JSON
   calls GitHub repository_dispatch
       ↓
 GitHub Actions Email Dispatcher workflow
-  receives payload
+  receives JSON payload
   runs OpenCode Go
   creates branch, report, commit, and PR
       ↓
@@ -93,35 +93,37 @@ Frequency: every 5 minutes or every 10 minutes
 Send an email to the builder/dispatcher alias with this subject:
 
 ```text
-[NABLA][PROMPT][BUILDER-A][RUN:EMAIL-DISPATCH-TEST-001]
+[NABLA][PROMPT][BUILDER-A][RUN:EMAIL-DISPATCH-TEST-JSON-001]
 ```
 
-Body:
+Body must be a single JSON object:
 
-```yaml
-kind: prompt
-repo: TomasDelon/nabla-agent-lab
-run_id: "EMAIL-DISPATCH-TEST-001"
-builder: "builder-a"
-base_branch: "main"
-branch: "agent/EMAIL-DISPATCH-TEST-001"
-allowed_paths:
-  - src/**
-  - tests/**
-forbidden_paths:
-  - .github/**
-  - package.json
-report_path: ".nabla-agent/runs/EMAIL-DISPATCH-TEST-001"
-task: |
-  Add a JavaScript ESM function named square(a) to src/math.js.
-  Export it.
-  Add tests in tests/math.test.mjs using node:test and node:assert/strict.
-  Keep the project JavaScript/Node/ESM only.
-  Do not add dependencies.
-acceptance:
-  - npm test passes
-  - square(4) returns 16
-  - square(-3) returns 9
+```json
+{
+  "kind": "prompt",
+  "repo": "TomasDelon/nabla-agent-lab",
+  "run_id": "EMAIL-DISPATCH-TEST-JSON-001",
+  "builder": "builder-a",
+  "base_branch": "main",
+  "branch": "agent/EMAIL-DISPATCH-TEST-JSON-001",
+  "allowed_paths": ["src/**", "tests/**"],
+  "forbidden_paths": [".github/**", "package.json"],
+  "report_path": ".nabla-agent/runs/EMAIL-DISPATCH-TEST-JSON-001",
+  "task": "Add a JavaScript ESM function named square(a) to src/math.js. Export it. Add tests in tests/math.test.mjs using node:test and node:assert/strict. Keep the project JavaScript/Node/ESM only. Do not add dependencies.",
+  "acceptance": [
+    "npm test passes",
+    "square(4) returns 16",
+    "square(-3) returns 9"
+  ]
+}
+```
+
+The body may also be wrapped in a fenced block:
+
+```text
+```json
+{ ... }
+```
 ```
 
 ## Expected Result
@@ -129,8 +131,9 @@ acceptance:
 The Apps Script bridge should:
 
 1. detect the prompt email;
-2. apply label `NABLA_DISPATCHED`;
-3. send repository_dispatch to GitHub.
+2. parse and validate JSON;
+3. apply label `NABLA_DISPATCHED`;
+4. send repository_dispatch to GitHub.
 
 GitHub Actions should:
 
@@ -153,6 +156,7 @@ A later version may add a dedicated email-sending bridge for builder result emai
 
 - The Apps Script bridge must ignore emails that do not start with `[NABLA][PROMPT]`.
 - The bridge labels processed threads with `NABLA_DISPATCHED` to avoid duplicate dispatch.
+- Invalid JSON prompt emails are labeled `NABLA_DISPATCH_FAILED` and reported to the auditor.
 - The dispatcher validates the repo, builder id, run id, and task before running OpenCode.
 - The lab repository is the only intended target.
 - Do not point this bridge to real Nabla until the lab is validated.
