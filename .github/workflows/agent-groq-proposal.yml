@@ -1,0 +1,48 @@
+name: Agent Groq Proposal
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Groq model id
+        required: false
+        default: auto-groq
+
+permissions:
+  contents: write
+
+jobs:
+  groq-proposal-only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run tests before Groq proposal
+        run: npm test
+
+      - name: Run Groq proposal-only agent
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ inputs.model }}
+        run: node scripts/agent-groq-proposal.mjs
+
+      - name: Show source diff safety check
+        run: git diff -- src tests package.json
+
+      - name: Commit Groq proposal report
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .nabla-agent/runs
+          if git diff --cached --quiet; then
+            echo No Groq proposal report changes to commit.
+          else
+            git commit -m "chore(agent): add Groq proposal report"
+            git push
+          fi
