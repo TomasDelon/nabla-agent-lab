@@ -1,0 +1,45 @@
+name: Agent OpenCode Smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  opencode-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install OpenCode
+        run: npm install -g opencode-ai@1.15.5
+
+      - name: Configure OpenCode auth
+        env:
+          OPENCODE_GO_KEY: ${{ secrets.OPENCODE_GO_KEY }}
+        run: node scripts/opencode-ci-auth.mjs
+
+      - name: Smoke test OpenCode Go
+        run: |
+          mkdir -p .nabla-agent/runs/opencode-smoke
+          opencode run --model opencode-go/deepseek-v4-flash --format json --dir . "Reply with exactly: OPENCODE_GO_OK" > .nabla-agent/runs/opencode-smoke/output.jsonl
+          tail -n 40 .nabla-agent/runs/opencode-smoke/output.jsonl
+
+      - name: Commit smoke report
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add .nabla-agent/runs/opencode-smoke
+          if git diff --cached --quiet; then
+            echo No smoke report changes to commit.
+          else
+            git commit -m "chore(agent): add OpenCode smoke report"
+            git push
+          fi
