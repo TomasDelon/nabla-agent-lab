@@ -1,0 +1,8 @@
+{
+  "runId": "2026-05-19T01-10-36-970Z",
+  "stage": "dry-run",
+  "status": "completed",
+  "aiCalled": false,
+  "sourceModified": false,
+  "promptPath": ".nabla-agent/prompts/next.md"
+}
