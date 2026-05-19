@@ -1,0 +1,9 @@
+{
+  "runId": "2026-05-19T02-11-30-164Z",
+  "stage": "proposal-only",
+  "status": "failed",
+  "aiCalled": true,
+  "model": "deepseek/deepseek-v4-flash:free",
+  "sourceModified": false,
+  "httpStatus": 429
+}
