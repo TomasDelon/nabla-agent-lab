@@ -1,0 +1,62 @@
+name: Email Dispatcher
+
+on:
+  repository_dispatch:
+    types:
+      - nabla_email_prompt
+  workflow_dispatch:
+    inputs:
+      payload:
+        description: JSON prompt payload
+        required: true
+        default: '{"kind":"prompt","repo":"TomasDelon/nabla-agent-lab","run_id":"EMAIL-DISPATCH-TEST","builder":"builder-a","base_branch":"main","task":"Add a JavaScript ESM function named square(a) to src/math.js and tests for it.","allowed_paths":["src/**","tests/**"],"forbidden_paths":[".github/**","package.json"],"acceptance":["npm test passes","square(4) returns 16"]}'
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: email-dispatcher-${{ github.event.client_payload.run_id || inputs.payload || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install OpenCode Go CLI
+        run: |
+          npm install -g opencode-ai
+          opencode --version
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "nabla-email-dispatcher-bot"
+          git config user.email "nabla-email-dispatcher-bot@users.noreply.github.com"
+
+      - name: Write dispatch payload
+        run: |
+          cat > dispatch-payload.json <<'JSON'
+          ${{ toJson(github.event.client_payload || fromJson(inputs.payload)) }}
+          JSON
+          cat dispatch-payload.json
+
+      - name: Run email dispatcher
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          NABLA_DISPATCH_PAYLOAD_PATH: dispatch-payload.json
+          NABLA_OPENCODE_MODEL: ${{ vars.NABLA_OPENCODE_MODEL }}
+          NABLA_RESULT_EMAIL_TO: tomas.delon.gago@gmail.com
+        run: node scripts/email-dispatcher-runner.mjs
