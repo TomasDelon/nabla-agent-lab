@@ -1,17 +1,21 @@
-# LAB-001 — Dry Run
+# LAB-002 JavaScript Proposal Only
 
-## Goal
+Goal: generate a proposal for adding subtract(a, b) to this JavaScript Node ESM lab project.
 
-Verify that GitHub Actions can read this prompt and create a run report without calling an AI model and without modifying source code.
+Current project facts:
+- package.json has type module and test script node --test.
+- src/math.js exports add(a, b).
+- tests/math.test.mjs uses node:test and node:assert/strict.
+- tests/math.test.mjs imports add from ../src/math.js.
 
-## Required Behavior
+Required proposal:
+- update src/math.js to export subtract(a, b);
+- update tests/math.test.mjs to import subtract;
+- add subtract tests using node:test and node:assert/strict.
 
-- Read this prompt.
-- Create a run directory under `.nabla-agent/runs/`.
-- Write the prompt copy, fake output, and status JSON.
-- Do not modify `src/**`.
-- Do not modify `tests/**`.
-
-## Expected Fake Output
-
-The dry-run runner should report that it would ask an agent to add `subtract(a, b)` later, but it must not do it yet.
+Rules:
+- proposal only;
+- JavaScript only;
+- existing files only;
+- no Python;
+- no new files.
