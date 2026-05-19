@@ -28,11 +28,11 @@ function isFreeDeepSeek(entry) {
 function rankDeepSeek(entry) {
   const text = `${entry?.id || ""} ${entry?.name || ""}`.toLowerCase();
   let score = 0;
-  if (text.includes("v4")) score += 100;
-  if (text.includes("flash")) score += 50;
-  if (text.includes("v3.1")) score += 30;
-  if (text.includes("chat")) score += 10;
-  if (text.includes("r1")) score += 5;
+  if (text.includes("chat")) score += 100;
+  if (text.includes("v3")) score += 50;
+  if (text.includes("v4")) score += 40;
+  if (text.includes("flash")) score += 20;
+  if (text.includes("r1")) score -= 20;
   return score;
 }
 
@@ -64,6 +64,21 @@ async function writeRunReport({ runDir, prompt, output, status }) {
   await writeFile(join(runDir, "prompt.md"), prompt, "utf8");
   await writeFile(join(runDir, "output.md"), output.trim() + "\n", "utf8");
   await writeFile(join(runDir, "status.json"), JSON.stringify(status, null, 2) + "\n", "utf8");
+}
+
+function getAssistantContent(data) {
+  const message = data?.choices?.[0]?.message;
+  if (typeof message?.content === "string" && message.content.trim()) {
+    return message.content;
+  }
+  if (Array.isArray(message?.content)) {
+    const text = message.content
+      .map((part) => typeof part?.text === "string" ? part.text : "")
+      .join("\n")
+      .trim();
+    if (text) return text;
+  }
+  return null;
 }
 
 if (!existsSync(promptPath)) {
@@ -202,13 +217,23 @@ if (!response.ok) {
   process.exit(0);
 }
 
-const output = data?.choices?.[0]?.message?.content;
+const output = getAssistantContent(data);
 if (!output) {
-  const message = sanitize(responseText).slice(0, 2000);
   await writeRunReport({
     runDir,
     prompt,
-    output: `# OpenRouter Report Failed\n\nResponse did not contain choices[0].message.content.\n\n${message}\n`,
+    output: [
+      "# OpenRouter Report Failed",
+      "",
+      "The provider returned a response without assistant content.",
+      "",
+      `Requested model: ${requestedModel}`,
+      `Selected model: ${selectedModel}`,
+      "",
+      "The raw provider response was intentionally not persisted because it may contain reasoning-only fields.",
+      "Use a chat/content model or rerun with auto-deepseek-free.",
+      ""
+    ].join("\n"),
     status: {
       runId,
       stage: "openrouter-report-only",
@@ -218,9 +243,10 @@ if (!output) {
       selectedModel,
       sourceModified: false,
       promptPath,
-      error: "Missing choices[0].message.content"
+      error: "Missing assistant content"
     }
   });
+  console.log("OpenRouter response had no assistant content. Raw response was not persisted.");
   console.log(`Created failed report at ${runDir}`);
   process.exit(0);
 }
