@@ -1,0 +1,11 @@
+{
+  "runId": "2026-05-19T01-46-43-937Z",
+  "stage": "openrouter-report-only",
+  "status": "failed",
+  "aiCalled": true,
+  "requestedModel": "deepseek/deepseek-v4-flash:free",
+  "selectedModel": "deepseek/deepseek-v4-flash:free",
+  "sourceModified": false,
+  "promptPath": ".nabla-agent/prompts/next.md",
+  "error": "Missing choices[0].message.content"
+}
