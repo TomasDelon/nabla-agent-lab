@@ -6,7 +6,7 @@ on:
       model:
         description: OpenRouter model id
         required: false
-        default: deepseek/deepseek-chat-v3.1:free
+        default: deepseek/deepseek-v4-flash:free
 
 permissions:
   contents: write
