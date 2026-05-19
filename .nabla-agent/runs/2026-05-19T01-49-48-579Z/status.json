@@ -1,0 +1,10 @@
+{
+  "runId": "2026-05-19T01-49-48-579Z",
+  "stage": "openrouter-report-only",
+  "status": "completed",
+  "aiCalled": true,
+  "requestedModel": "deepseek/deepseek-v4-flash:free",
+  "selectedModel": "deepseek/deepseek-v4-flash:free",
+  "sourceModified": false,
+  "promptPath": ".nabla-agent/prompts/next.md"
+}
