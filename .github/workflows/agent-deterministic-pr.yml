@@ -1,0 +1,58 @@
+name: Agent Deterministic PR
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  deterministic-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Create working branch
+        run: |
+          git checkout -B agent/add-multiply
+
+      - name: Run deterministic agent edit
+        run: node scripts/agent-deterministic-pr.mjs
+
+      - name: Run tests
+        run: npm test
+
+      - name: Commit changes
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add src/math.js tests/math.test.mjs
+          if git diff --cached --quiet; then
+            echo No source changes to commit.
+          else
+            git commit -m "feat: add multiply function"
+          fi
+
+      - name: Push branch
+        run: git push --force-with-lease origin agent/add-multiply
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr view agent/add-multiply --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 && exit 0
+          gh pr create \
+            --repo "$GITHUB_REPOSITORY" \
+            --base main \
+            --head agent/add-multiply \
+            --title "Add multiply function" \
+            --body "Adds multiply(a, b) to src/math.js and tests it in tests/math.test.mjs. Created by the deterministic lab agent workflow."
