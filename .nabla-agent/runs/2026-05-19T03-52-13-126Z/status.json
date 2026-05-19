@@ -1,0 +1,15 @@
+{
+  "runId": "2026-05-19T03-52-13-126Z",
+  "stage": "groq-proposal-only",
+  "status": "completed",
+  "aiCalled": true,
+  "requestedModel": "auto-groq",
+  "selectedModel": "llama-3.3-70b-versatile",
+  "modelsTried": [
+    {
+      "model": "llama-3.3-70b-versatile",
+      "ok": true
+    }
+  ],
+  "sourceModified": false
+}
