@@ -4,12 +4,25 @@ import { join } from "node:path";
 
 const promptPath = ".nabla-agent/prompts/next.md";
 const apiKey = process.env.OPENROUTER_API_KEY;
-const model = process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash:free";
+const requestedModel = process.env.OPENROUTER_MODEL || "auto-free";
 
-function contentOf(data) {
+const fallbackModels = [
+  "deepseek/deepseek-v4-flash:free",
+  "deepseek/deepseek-chat:free",
+  "deepseek/deepseek-r1:free",
+  "qwen/qwen3-coder:free",
+  "qwen/qwen3:free"
+];
+
+function getText(data) {
   const msg = data?.choices?.[0]?.message;
   if (typeof msg?.content === "string" && msg.content.trim()) return msg.content.trim();
   return null;
+}
+
+function modelsFor(input) {
+  if (input === "auto-free") return fallbackModels;
+  return [input, ...fallbackModels.filter((m) => m !== input)];
 }
 
 async function writeReport(runDir, prompt, proposal, status) {
@@ -19,28 +32,7 @@ async function writeReport(runDir, prompt, proposal, status) {
   await writeFile(join(runDir, "status.json"), JSON.stringify(status, null, 2) + "\n", "utf8");
 }
 
-if (!existsSync(promptPath)) throw new Error(`Missing prompt file: ${promptPath}`);
-const prompt = await readFile(promptPath, "utf8");
-const runId = new Date().toISOString().replace(/[:.]/g, "-");
-const runDir = join(".nabla-agent", "runs", runId);
-
-if (!apiKey) {
-  await writeReport(runDir, prompt, "OPENROUTER_API_KEY was not available.", {
-    runId, stage: "proposal-only", status: "failed", aiCalled: false, model, sourceModified: false
-  });
-  process.exit(0);
-}
-
-const system = [
-  "You are in a safe lab workflow.",
-  "Do not modify files. Generate a proposal only.",
-  "Return a concise file-by-file change proposal for adding subtract(a, b) and tests.",
-  "No markdown fences. No secrets."
-].join("\n");
-
-let responseText = "";
-let data = null;
-try {
+async function ask(model, system, prompt) {
   const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
     headers: {
@@ -58,30 +50,83 @@ try {
       temperature: 0.1
     })
   });
-  responseText = await response.text();
-  try { data = JSON.parse(responseText); } catch { data = null; }
-  if (!response.ok) {
-    await writeReport(runDir, prompt, `OpenRouter request failed with HTTP ${response.status}.`, {
-      runId, stage: "proposal-only", status: "failed", aiCalled: true, model, sourceModified: false, httpStatus: response.status
-    });
-    process.exit(0);
+  const body = await response.text();
+  let data = null;
+  try { data = JSON.parse(body); } catch { data = null; }
+  if (!response.ok) return { ok: false, model, httpStatus: response.status, error: data?.error?.message || `HTTP ${response.status}` };
+  const text = getText(data);
+  if (!text) return { ok: false, model, httpStatus: response.status, error: "missing assistant content" };
+  return { ok: true, model, text };
+}
+
+if (!existsSync(promptPath)) throw new Error(`Missing prompt file: ${promptPath}`);
+const prompt = await readFile(promptPath, "utf8");
+const runId = new Date().toISOString().replace(/[:.]/g, "-");
+const runDir = join(".nabla-agent", "runs", runId);
+const candidates = modelsFor(requestedModel);
+
+if (!apiKey) {
+  await writeReport(runDir, prompt, "OPENROUTER_API_KEY was not available.", {
+    runId,
+    stage: "proposal-only",
+    status: "failed",
+    aiCalled: false,
+    requestedModel,
+    sourceModified: false
+  });
+  process.exit(0);
+}
+
+const system = [
+  "You are in a safe lab workflow.",
+  "Do not modify files. Generate a proposal only.",
+  "Return a concise file-by-file proposal for adding subtract(a, b) and tests.",
+  "No markdown fences. No credentials."
+].join("\n");
+
+const attempts = [];
+let winner = null;
+for (const model of candidates) {
+  console.log(`Trying model: ${model}`);
+  try {
+    const result = await ask(model, system, prompt);
+    attempts.push(result.ok ? { model, ok: true } : { model, ok: false, httpStatus: result.httpStatus, error: result.error });
+    if (result.ok) {
+      winner = result;
+      break;
+    }
+  } catch (error) {
+    attempts.push({ model, ok: false, error: error.message });
   }
-} catch (error) {
-  await writeReport(runDir, prompt, `Network request failed: ${error.message}`, {
-    runId, stage: "proposal-only", status: "failed", aiCalled: true, model, sourceModified: false, error: error.message
+}
+
+if (!winner) {
+  await writeReport(runDir, prompt, [
+    "# Proposal Failed",
+    "",
+    "All configured free models failed.",
+    "",
+    ...attempts.map((a) => `- ${a.model}: ${a.ok ? "ok" : `failed${a.httpStatus ? ` HTTP ${a.httpStatus}` : ""}${a.error ? ` — ${a.error}` : ""}`}`)
+  ].join("\n"), {
+    runId,
+    stage: "proposal-only",
+    status: "failed",
+    aiCalled: true,
+    requestedModel,
+    modelsTried: attempts,
+    sourceModified: false
   });
   process.exit(0);
 }
 
-const proposal = contentOf(data);
-if (!proposal) {
-  await writeReport(runDir, prompt, "Provider returned no assistant content.", {
-    runId, stage: "proposal-only", status: "failed", aiCalled: true, model, sourceModified: false, error: "missing assistant content"
-  });
-  process.exit(0);
-}
-
-await writeReport(runDir, prompt, proposal, {
-  runId, stage: "proposal-only", status: "completed", aiCalled: true, model, sourceModified: false
+await writeReport(runDir, prompt, winner.text, {
+  runId,
+  stage: "proposal-only",
+  status: "completed",
+  aiCalled: true,
+  requestedModel,
+  selectedModel: winner.model,
+  modelsTried: attempts,
+  sourceModified: false
 });
 console.log(`Created proposal report at ${runDir}`);
