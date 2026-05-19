@@ -1,0 +1,8 @@
+{
+  "stage": "dry-run",
+  "status": "ready",
+  "currentTask": "LAB-001",
+  "writerAllowed": false,
+  "autoMergeAllowed": false,
+  "lastRunId": null
+}
