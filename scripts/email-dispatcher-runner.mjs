@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const root = process.cwd();
@@ -29,7 +29,7 @@ function must(cmd, args, options = {}) {
 
 function parsePayload() {
   if (payloadPath) {
-    return JSON.parse(require("node:fs").readFileSync(payloadPath, "utf8"));
+    return JSON.parse(readFileSync(payloadPath, "utf8"));
   }
   return JSON.parse(rawPayload || "{}");
 }
@@ -41,6 +41,9 @@ function validate(payload) {
   if (!payload.run_id) errors.push("payload.run_id is required");
   if (!payload.builder) errors.push("payload.builder is required");
   if (!payload.task) errors.push("payload.task is required");
+  if (!Array.isArray(payload.allowed_paths)) errors.push("payload.allowed_paths must be an array");
+  if (!Array.isArray(payload.forbidden_paths)) errors.push("payload.forbidden_paths must be an array");
+  if (!Array.isArray(payload.acceptance)) errors.push("payload.acceptance must be an array");
 
   const allowedRepo = process.env.GITHUB_REPOSITORY;
   if (allowedRepo && payload.repo !== allowedRepo) {
@@ -163,20 +166,18 @@ function main() {
 
   if (process.env.NABLA_RESULT_EMAIL_TO) {
     const subject = `[NABLA][RESULT][${payload.builder.toUpperCase()}][RUN:${runId}]`;
-    const body = [
-      "kind: result",
-      `repo: ${process.env.GITHUB_REPOSITORY}`,
-      `run_id: "${runId}"`,
-      `builder: "${payload.builder}"`,
-      `branch: "${branchName}"`,
-      `pr: "${pr}"`,
-      `report_path: ".nabla-agent/runs/${runId}"`,
-      `status: "ready_for_audit"`,
-      `test_status: ${tests.status}`,
-      "summary: |",
-      "  Builder finished and created a PR. The auditor should inspect the PR, diff, tests, and report files.",
-    ].join("\n");
-    must("gh", ["api", "/user"], { timeout: 1000 * 30 });
+    const body = JSON.stringify({
+      kind: "result",
+      repo: process.env.GITHUB_REPOSITORY,
+      run_id: runId,
+      builder: payload.builder,
+      branch: branchName,
+      pr,
+      report_path: `.nabla-agent/runs/${runId}`,
+      status: "ready_for_audit",
+      test_status: tests.status,
+      summary: "Builder finished and created a PR. The auditor should inspect the PR, diff, tests, and report files."
+    }, null, 2);
     console.log(`Result email should be sent externally: ${subject}\n${body}`);
   }
 }
