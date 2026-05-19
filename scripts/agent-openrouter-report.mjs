@@ -4,7 +4,7 @@ import { join } from "node:path";
 
 const promptPath = ".nabla-agent/prompts/next.md";
 const apiKey = process.env.OPENROUTER_API_KEY;
-const model = process.env.OPENROUTER_MODEL || "deepseek/deepseek-v4-flash:free";
+const requestedModel = process.env.OPENROUTER_MODEL || "auto-deepseek-free";
 
 function sanitize(value) {
   return String(value)
@@ -12,41 +12,99 @@ function sanitize(value) {
     .replace(/Bearer\s+[A-Za-z0-9._~+/-]+/g, "Bearer [REDACTED]");
 }
 
-async function fetchModelCandidates() {
-  try {
-    const response = await fetch("https://openrouter.ai/api/v1/models");
-    const text = await response.text();
-    const data = JSON.parse(text);
-    const models = Array.isArray(data?.data) ? data.data : [];
-    return models
-      .filter((entry) => {
-        const id = String(entry?.id || "").toLowerCase();
-        const name = String(entry?.name || "").toLowerCase();
-        return (id.includes("deepseek") || name.includes("deepseek")) && (id.includes(":free") || name.includes("free"));
-      })
-      .map((entry) => `${entry.id}${entry.name ? ` — ${entry.name}` : ""}`)
-      .slice(0, 20);
-  } catch (error) {
-    return [`Could not fetch model candidates: ${sanitize(error.message)}`];
+async function fetchModels() {
+  const response = await fetch("https://openrouter.ai/api/v1/models");
+  const text = await response.text();
+  const data = JSON.parse(text);
+  return Array.isArray(data?.data) ? data.data : [];
+}
+
+function isFreeDeepSeek(entry) {
+  const id = String(entry?.id || "").toLowerCase();
+  const name = String(entry?.name || "").toLowerCase();
+  return (id.includes("deepseek") || name.includes("deepseek")) && (id.includes(":free") || name.includes("free"));
+}
+
+function rankDeepSeek(entry) {
+  const text = `${entry?.id || ""} ${entry?.name || ""}`.toLowerCase();
+  let score = 0;
+  if (text.includes("v4")) score += 100;
+  if (text.includes("flash")) score += 50;
+  if (text.includes("v3.1")) score += 30;
+  if (text.includes("chat")) score += 10;
+  if (text.includes("r1")) score += 5;
+  return score;
+}
+
+async function resolveModel(inputModel) {
+  if (inputModel !== "auto-deepseek-free") {
+    return { selectedModel: inputModel, candidates: [] };
   }
+
+  try {
+    const models = await fetchModels();
+    const candidates = models
+      .filter(isFreeDeepSeek)
+      .sort((a, b) => rankDeepSeek(b) - rankDeepSeek(a));
+
+    return {
+      selectedModel: candidates[0]?.id || "deepseek/deepseek-chat:free",
+      candidates: candidates.map((entry) => `${entry.id}${entry.name ? ` — ${entry.name}` : ""}`).slice(0, 20)
+    };
+  } catch (error) {
+    return {
+      selectedModel: "deepseek/deepseek-chat:free",
+      candidates: [`Could not fetch model list: ${sanitize(error.message)}`]
+    };
+  }
+}
+
+async function writeRunReport({ runDir, prompt, output, status }) {
+  await mkdir(runDir, { recursive: true });
+  await writeFile(join(runDir, "prompt.md"), prompt, "utf8");
+  await writeFile(join(runDir, "output.md"), output.trim() + "\n", "utf8");
+  await writeFile(join(runDir, "status.json"), JSON.stringify(status, null, 2) + "\n", "utf8");
 }
 
 if (!existsSync(promptPath)) {
   throw new Error(`Missing prompt file: ${promptPath}`);
 }
 
-console.log(`Prompt path: ${promptPath}`);
-console.log(`Selected OpenRouter model: ${model}`);
-console.log(`OPENROUTER_API_KEY present: ${apiKey ? "yes" : "no"}`);
-console.log(`OPENROUTER_API_KEY length: ${apiKey ? apiKey.length : 0}`);
-
-if (!apiKey) {
-  throw new Error("Missing OPENROUTER_API_KEY secret. Add it under repository Settings > Secrets and variables > Actions.");
-}
-
 const prompt = await readFile(promptPath, "utf8");
 const runId = new Date().toISOString().replace(/[:.]/g, "-");
 const runDir = join(".nabla-agent", "runs", runId);
+const { selectedModel, candidates } = await resolveModel(requestedModel);
+
+console.log(`Prompt path: ${promptPath}`);
+console.log(`Requested OpenRouter model: ${requestedModel}`);
+console.log(`Selected OpenRouter model: ${selectedModel}`);
+console.log(`OPENROUTER_API_KEY present: ${apiKey ? "yes" : "no"}`);
+console.log(`OPENROUTER_API_KEY length: ${apiKey ? apiKey.length : 0}`);
+if (candidates.length) {
+  console.log("DeepSeek free candidates discovered:");
+  for (const candidate of candidates) console.log(`- ${candidate}`);
+}
+
+if (!apiKey) {
+  await writeRunReport({
+    runDir,
+    prompt,
+    output: "# OpenRouter Report Failed\n\nOPENROUTER_API_KEY was not available to the workflow.\n",
+    status: {
+      runId,
+      stage: "openrouter-report-only",
+      status: "failed",
+      aiCalled: false,
+      requestedModel,
+      selectedModel,
+      sourceModified: false,
+      promptPath,
+      error: "Missing OPENROUTER_API_KEY secret"
+    }
+  });
+  console.log(`Created failed report at ${runDir}`);
+  process.exit(0);
+}
 
 const systemPrompt = [
   "You are running inside Nabla Agent Lab Stage 2.",
@@ -57,6 +115,8 @@ const systemPrompt = [
 ].join("\n");
 
 let response;
+let responseText = "";
+let data = null;
 try {
   response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
     method: "POST",
@@ -67,7 +127,7 @@ try {
       "X-Title": "Nabla Agent Lab"
     },
     body: JSON.stringify({
-      model,
+      model: selectedModel,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt }
@@ -75,56 +135,111 @@ try {
       temperature: 0.2
     })
   });
+  responseText = await response.text();
+  try {
+    data = JSON.parse(responseText);
+  } catch {
+    data = null;
+  }
 } catch (error) {
-  throw new Error(`OpenRouter network request failed: ${sanitize(error.message)}`);
-}
-
-const responseText = await response.text();
-let data;
-try {
-  data = JSON.parse(responseText);
-} catch {
-  data = null;
+  const message = sanitize(error.message);
+  await writeRunReport({
+    runDir,
+    prompt,
+    output: `# OpenRouter Report Failed\n\nNetwork request failed.\n\n${message}\n`,
+    status: {
+      runId,
+      stage: "openrouter-report-only",
+      status: "failed",
+      aiCalled: true,
+      requestedModel,
+      selectedModel,
+      sourceModified: false,
+      promptPath,
+      error: message
+    }
+  });
+  console.log(`Created failed report at ${runDir}`);
+  process.exit(0);
 }
 
 if (!response.ok) {
   const message = sanitize(data?.error?.message || responseText);
+  await writeRunReport({
+    runDir,
+    prompt,
+    output: [
+      "# OpenRouter Report Failed",
+      "",
+      `HTTP status: ${response.status}`,
+      "",
+      `Error: ${message}`,
+      "",
+      `Requested model: ${requestedModel}`,
+      `Selected model: ${selectedModel}`,
+      "",
+      "DeepSeek free candidates discovered:",
+      ...(candidates.length ? candidates.map((candidate) => `- ${candidate}`) : ["- none"]),
+      ""
+    ].join("\n"),
+    status: {
+      runId,
+      stage: "openrouter-report-only",
+      status: "failed",
+      aiCalled: true,
+      requestedModel,
+      selectedModel,
+      sourceModified: false,
+      promptPath,
+      httpStatus: response.status,
+      error: message,
+      candidates
+    }
+  });
   console.log(`OpenRouter status: ${response.status}`);
   console.log(`OpenRouter error: ${message}`);
-  const candidates = await fetchModelCandidates();
-  console.log("Available DeepSeek free model candidates:");
-  for (const candidate of candidates) {
-    console.log(`- ${candidate}`);
-  }
-  throw new Error(`OpenRouter request failed with ${response.status}. See sanitized diagnostics above.`);
+  console.log(`Created failed report at ${runDir}`);
+  process.exit(0);
 }
 
 const output = data?.choices?.[0]?.message?.content;
 if (!output) {
-  console.log(`OpenRouter raw response: ${sanitize(responseText).slice(0, 2000)}`);
-  throw new Error("OpenRouter response did not contain choices[0].message.content");
-}
-
-await mkdir(runDir, { recursive: true });
-await writeFile(join(runDir, "prompt.md"), prompt, "utf8");
-await writeFile(join(runDir, "output.md"), output.trim() + "\n", "utf8");
-await writeFile(
-  join(runDir, "status.json"),
-  JSON.stringify(
-    {
+  const message = sanitize(responseText).slice(0, 2000);
+  await writeRunReport({
+    runDir,
+    prompt,
+    output: `# OpenRouter Report Failed\n\nResponse did not contain choices[0].message.content.\n\n${message}\n`,
+    status: {
       runId,
       stage: "openrouter-report-only",
-      status: "completed",
+      status: "failed",
       aiCalled: true,
-      model,
+      requestedModel,
+      selectedModel,
       sourceModified: false,
-      promptPath
-    },
-    null,
-    2
-  ) + "\n",
-  "utf8"
-);
+      promptPath,
+      error: "Missing choices[0].message.content"
+    }
+  });
+  console.log(`Created failed report at ${runDir}`);
+  process.exit(0);
+}
+
+await writeRunReport({
+  runDir,
+  prompt,
+  output,
+  status: {
+    runId,
+    stage: "openrouter-report-only",
+    status: "completed",
+    aiCalled: true,
+    requestedModel,
+    selectedModel,
+    sourceModified: false,
+    promptPath
+  }
+});
 
 console.log(`OpenRouter status: ${response.status}`);
 console.log(`Created OpenRouter report at ${runDir}`);
