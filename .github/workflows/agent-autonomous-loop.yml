@@ -1,0 +1,64 @@
+name: Agent Autonomous Loop
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed_path:
+        description: Seed task file path
+        required: false
+        default: .nabla-agent/seeds/next-autonomous-task.md
+      allow_auto_merge:
+        description: Merge automatically when all gates pass
+        required: false
+        default: "true"
+  schedule:
+    - cron: "17 */6 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: read
+
+concurrency:
+  group: agent-autonomous-loop
+  cancel-in-progress: false
+
+jobs:
+  autonomous-loop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install OpenCode Go CLI
+        run: |
+          npm install -g opencode-ai
+          opencode --version
+
+      - name: Validate baseline tests
+        run: npm test
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "nabla-agent-lab-bot"
+          git config user.email "nabla-agent-lab-bot@users.noreply.github.com"
+
+      - name: Run autonomous loop
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          NABLA_PLANNER_MODEL: gpt-4.1-mini
+          NABLA_AUDITOR_MODEL: gpt-4.1-mini
+          NABLA_SEED_PATH: ${{ inputs.seed_path || '.nabla-agent/seeds/next-autonomous-task.md' }}
+          NABLA_ALLOW_AUTO_MERGE: ${{ inputs.allow_auto_merge || 'true' }}
+          NABLA_BASE_BRANCH: main
+        run: node scripts/agent-autonomous-loop.mjs
