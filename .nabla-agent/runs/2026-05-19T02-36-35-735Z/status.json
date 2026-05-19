@@ -1,0 +1,40 @@
+{
+  "runId": "2026-05-19T02-36-35-735Z",
+  "stage": "proposal-only",
+  "status": "failed",
+  "aiCalled": true,
+  "requestedModel": "auto-free",
+  "modelsTried": [
+    {
+      "model": "deepseek/deepseek-v4-flash:free",
+      "ok": false,
+      "httpStatus": 429,
+      "error": "Provider returned error"
+    },
+    {
+      "model": "deepseek/deepseek-chat:free",
+      "ok": false,
+      "httpStatus": 404,
+      "error": "No endpoints found for deepseek/deepseek-chat:free."
+    },
+    {
+      "model": "deepseek/deepseek-r1:free",
+      "ok": false,
+      "httpStatus": 404,
+      "error": "No endpoints found for deepseek/deepseek-r1:free."
+    },
+    {
+      "model": "qwen/qwen3-coder:free",
+      "ok": false,
+      "httpStatus": 429,
+      "error": "Provider returned error"
+    },
+    {
+      "model": "qwen/qwen3:free",
+      "ok": false,
+      "httpStatus": 400,
+      "error": "qwen/qwen3:free is not a valid model ID"
+    }
+  ],
+  "sourceModified": false
+}
