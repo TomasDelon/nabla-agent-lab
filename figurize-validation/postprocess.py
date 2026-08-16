@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import hashlib
 import html
+import json
 import math
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -15,6 +18,11 @@ STATIC = OUTPUT / "static"
 TRANSPARENT = OUTPUT / "transparent"
 SHEETS = OUTPUT / "contact_sheets"
 
+EXPECTED_STATIC = 21
+EXPECTED_TRANSPARENT = 7
+EXPECTED_VIDEO = 4
+EXPECTED_GIF = 4
+
 GIF.mkdir(parents=True, exist_ok=True)
 SHEETS.mkdir(parents=True, exist_ok=True)
 
@@ -24,6 +32,8 @@ def run(command: list[str]) -> None:
 
 
 def create_gifs() -> None:
+    if shutil.which("ffmpeg") is None:
+        raise RuntimeError("ffmpeg is required for GIF post-processing")
     for video in sorted(VIDEO.glob("*.mp4")):
         palette = GIF / f"{video.stem}_palette.png"
         output = GIF / f"{video.stem}.gif"
@@ -89,18 +99,19 @@ def make_contact_sheet(
         x0 = col * tile_size[0]
         y0 = row * tile_size[1]
         preview_size = (tile_size[0] - 20, tile_size[1] - 45)
-        if transparent_preview:
-            tile = checkerboard(preview_size)
-        else:
-            tile = Image.new("RGB", preview_size, "#F8FAFC")
+        tile = checkerboard(preview_size) if transparent_preview else Image.new("RGB", preview_size, "#F8FAFC")
         image = Image.open(path).convert("RGBA")
         image.thumbnail((preview_size[0] - 12, preview_size[1] - 12), Image.Resampling.LANCZOS)
         px = (preview_size[0] - image.width) // 2
         py = (preview_size[1] - image.height) // 2
         tile.paste(image, (px, py), image)
         sheet.paste(tile, (x0 + 10, y0 + 10))
-        label = path.stem
-        draw.text((x0 + 14, y0 + tile_size[1] - 25), label, fill="#0F172A", font=font)
+        draw.text(
+            (x0 + 14, y0 + tile_size[1] - 25),
+            path.stem,
+            fill="#0F172A",
+            font=font,
+        )
     sheet.save(destination, optimize=True)
 
 
@@ -143,6 +154,42 @@ figcaption{{padding:10px 4px 2px;font-family:ui-monospace,monospace;font-size:13
     (OUTPUT / "index.html").write_text(document, encoding="utf-8")
 
 
+def write_manifest() -> dict[str, object]:
+    files = []
+    for path in sorted(
+        p for p in OUTPUT.rglob("*") if p.is_file() and "logs" not in p.parts
+    ):
+        files.append(
+            {
+                "path": path.relative_to(OUTPUT).as_posix(),
+                "bytes": path.stat().st_size,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+    manifest: dict[str, object] = {
+        "renderer": "Manim Community v0.20.1",
+        "static_count": len(list(STATIC.glob("*.png"))),
+        "transparent_count": len(list(TRANSPARENT.glob("*.png"))),
+        "video_count": len(list(VIDEO.glob("*.mp4"))),
+        "gif_count": len(list(GIF.glob("*.gif"))),
+        "contact_sheet_count": len(list(SHEETS.glob("*.png"))),
+        "files": files,
+    }
+    (OUTPUT / "manifest.json").write_text(
+        json.dumps(manifest, indent=2), encoding="utf-8"
+    )
+    return manifest
+
+
+def validate(manifest: dict[str, object]) -> None:
+    assert manifest["static_count"] == EXPECTED_STATIC, manifest
+    assert manifest["transparent_count"] == EXPECTED_TRANSPARENT, manifest
+    assert manifest["video_count"] == EXPECTED_VIDEO, manifest
+    assert manifest["gif_count"] == EXPECTED_GIF, manifest
+    assert manifest["contact_sheet_count"] == 2, manifest
+    assert (OUTPUT / "index.html").is_file()
+
+
 if __name__ == "__main__":
     create_gifs()
     make_contact_sheet(STATIC, SHEETS / "static-gallery.png")
@@ -152,3 +199,6 @@ if __name__ == "__main__":
         transparent_preview=True,
     )
     create_html()
+    result = write_manifest()
+    validate(result)
+    print(json.dumps({k: v for k, v in result.items() if k != "files"}, indent=2))
