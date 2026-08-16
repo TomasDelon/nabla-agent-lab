@@ -12,14 +12,11 @@ rm -rf "$MEDIA" "$OUTPUT"
 mkdir -p "$OUTPUT/static" "$OUTPUT/transparent" "$OUTPUT/video" "$OUTPUT/gif" "$LOGS"
 
 STATIC_2D=(
-  PrimitiveComponents
   AxisTicksGrid
   IntervalComponents
-  CartesianComponents
   GeometryComponents
   FunctionBasic
   FunctionEvaluation
-  FunctionRootsTangents
   ArbitraryPointOnCurve
   AreaUnderCurve
   AlgebraAreaIdentity
@@ -31,7 +28,10 @@ STATIC_2D=(
   DarkBackgroundPreview
 )
 
-STATIC_3D=(
+STATIC_REFINED=(
+  PrimitiveComponents
+  CartesianComponents
+  FunctionRootsTangents
   PointVectorSpace3D
   SolidGeometryCodes3D
   SurfaceContours3D
@@ -65,7 +65,7 @@ render_static() {
   local file="$1"
   local scene="$2"
   local output_name="${scene}_static"
-  echo "[static] $scene"
+  echo "[static] $scene from $file"
   manim \
     -ql \
     -s \
@@ -89,7 +89,7 @@ render_transparent() {
   local file="$1"
   local scene="$2"
   local output_name="${scene}_transparent"
-  echo "[transparent] $scene"
+  echo "[transparent] $scene from $file"
   manim \
     -ql \
     -s \
@@ -111,15 +111,16 @@ render_transparent() {
 }
 
 render_animation() {
-  local scene="$1"
+  local file="$1"
+  local scene="$2"
   local output_name="${scene}_video"
-  echo "[animation] $scene"
+  echo "[animation] $scene from $file"
   manim \
     -ql \
     --disable_caching \
     --media_dir "$MEDIA" \
     -o "$output_name" \
-    animations.py "$scene" \
+    "$file" "$scene" \
     >"$LOGS/${scene}.log" 2>&1
   local rendered
   rendered="$(find_output mp4 "$output_name")"
@@ -131,27 +132,56 @@ render_animation() {
   cp "$rendered" "$OUTPUT/video/${scene}.mp4"
 }
 
+static_file_for_scene() {
+  case "$1" in
+    PrimitiveComponents|CartesianComponents|FunctionRootsTangents|PointVectorSpace3D|SolidGeometryCodes3D|SurfaceContours3D|TangentPlaneSurface3D)
+      echo "gallery_refined.py"
+      ;;
+    *)
+      echo "gallery_2d.py"
+      ;;
+  esac
+}
+
+transparent_file_for_scene() {
+  case "$1" in
+    PrimitiveComponents|FunctionRootsTangents|TangentPlaneSurface3D)
+      echo "gallery_refined.py"
+      ;;
+    *)
+      echo "gallery_2d.py"
+      ;;
+  esac
+}
+
+animation_file_for_scene() {
+  case "$1" in
+    FunctionProgressiveAnimation|ProjectileMotionAnimation)
+      echo "animations_refined.py"
+      ;;
+    *)
+      echo "animations.py"
+      ;;
+  esac
+}
+
 for scene in "${STATIC_2D[@]}"; do
   render_static gallery_2d.py "$scene"
 done
 
-for scene in "${STATIC_3D[@]}"; do
-  render_static gallery_3d.py "$scene"
+for scene in "${STATIC_REFINED[@]}"; do
+  render_static "$(static_file_for_scene "$scene")" "$scene"
 done
 
 for scene in "${TRANSPARENT_SCENES[@]}"; do
-  if [[ "$scene" == *"3D" ]]; then
-    render_transparent gallery_3d.py "$scene"
-  else
-    render_transparent gallery_2d.py "$scene"
-  fi
+  render_transparent "$(transparent_file_for_scene "$scene")" "$scene"
 done
 
 for scene in "${ANIMATIONS[@]}"; do
-  render_animation "$scene"
+  render_animation "$(animation_file_for_scene "$scene")" "$scene"
 done
 
-expected_static=$((${#STATIC_2D[@]} + ${#STATIC_3D[@]}))
+expected_static=$((${#STATIC_2D[@]} + ${#STATIC_REFINED[@]}))
 actual_static=$(find "$OUTPUT/static" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_transparent=$(find "$OUTPUT/transparent" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_video=$(find "$OUTPUT/video" -maxdepth 1 -type f -name '*.mp4' | wc -l)
