@@ -30,6 +30,15 @@ jobs:
             manimcommunity/manim:v0.20.1 \
             bash render_gallery.sh
 
+      - name: Prepare runner post-processing
+        run: |
+          sudo chown -R "$USER:$USER" figurize-validation/output
+          ffmpeg -version | head -n 1
+          python -m pip install --disable-pip-version-check pillow
+
+      - name: Create GIFs, contact sheets and manifest
+        run: python figurize-validation/postprocess.py
+
       - name: Display render manifest
         run: cat figurize-validation/output/manifest.json
 
