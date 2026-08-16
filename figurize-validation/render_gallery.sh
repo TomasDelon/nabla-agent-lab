@@ -151,6 +151,8 @@ for scene in "${ANIMATIONS[@]}"; do
   render_animation "$scene"
 done
 
+python postprocess.py
+
 python - <<'PY'
 from __future__ import annotations
 
@@ -173,6 +175,8 @@ manifest = {
     "static_count": len(list((root / "static").glob("*.png"))),
     "transparent_count": len(list((root / "transparent").glob("*.png"))),
     "video_count": len(list((root / "video").glob("*.mp4"))),
+    "gif_count": len(list((root / "gif").glob("*.gif"))),
+    "contact_sheet_count": len(list((root / "contact_sheets").glob("*.png"))),
     "files": files,
 }
 (root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
@@ -183,9 +187,14 @@ expected_static=$((${#STATIC_2D[@]} + ${#STATIC_3D[@]}))
 actual_static=$(find "$OUTPUT/static" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_transparent=$(find "$OUTPUT/transparent" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_video=$(find "$OUTPUT/video" -maxdepth 1 -type f -name '*.mp4' | wc -l)
+actual_gif=$(find "$OUTPUT/gif" -maxdepth 1 -type f -name '*.gif' | wc -l)
 
 [[ "$actual_static" -eq "$expected_static" ]]
 [[ "$actual_transparent" -eq "${#TRANSPARENT_SCENES[@]}" ]]
 [[ "$actual_video" -eq "${#ANIMATIONS[@]}" ]]
+[[ "$actual_gif" -eq "${#ANIMATIONS[@]}" ]]
+[[ -f "$OUTPUT/contact_sheets/static-gallery.png" ]]
+[[ -f "$OUTPUT/contact_sheets/transparent-gallery.png" ]]
+[[ -f "$OUTPUT/index.html" ]]
 
-echo "Rendered $actual_static static PNGs, $actual_transparent transparent PNGs and $actual_video MP4s."
+echo "Rendered $actual_static static PNGs, $actual_transparent transparent PNGs, $actual_video MP4s and $actual_gif GIFs."
