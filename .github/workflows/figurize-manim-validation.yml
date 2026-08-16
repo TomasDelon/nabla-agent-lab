@@ -1,0 +1,42 @@
+name: Figurize Manim render validation
+
+on:
+  push:
+    branches:
+      - agent/figurize-manim-render-validation
+    paths:
+      - "figurize-validation/**"
+      - ".github/workflows/figurize-manim-validation.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out validation branch
+        uses: actions/checkout@v4
+
+      - name: Render with Manim Community v0.20.1
+        run: |
+          docker run --rm \
+            --user root \
+            -v "$PWD:/manim" \
+            -w /manim/figurize-validation \
+            manimcommunity/manim:v0.20.1 \
+            bash render_gallery.sh
+
+      - name: Display render manifest
+        run: cat figurize-validation/output/manifest.json
+
+      - name: Upload real Manim outputs
+        uses: actions/upload-artifact@v4
+        with:
+          name: figurize-manim-gallery
+          path: figurize-validation/output
+          if-no-files-found: error
+          retention-days: 14
