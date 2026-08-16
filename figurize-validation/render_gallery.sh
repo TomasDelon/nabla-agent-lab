@@ -151,50 +151,13 @@ for scene in "${ANIMATIONS[@]}"; do
   render_animation "$scene"
 done
 
-python postprocess.py
-
-python - <<'PY'
-from __future__ import annotations
-
-import hashlib
-import json
-from pathlib import Path
-
-root = Path("output")
-files = []
-for path in sorted(p for p in root.rglob("*") if p.is_file() and "logs" not in p.parts):
-    files.append(
-        {
-            "path": path.as_posix(),
-            "bytes": path.stat().st_size,
-            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
-        }
-    )
-manifest = {
-    "renderer": "Manim Community v0.20.1",
-    "static_count": len(list((root / "static").glob("*.png"))),
-    "transparent_count": len(list((root / "transparent").glob("*.png"))),
-    "video_count": len(list((root / "video").glob("*.mp4"))),
-    "gif_count": len(list((root / "gif").glob("*.gif"))),
-    "contact_sheet_count": len(list((root / "contact_sheets").glob("*.png"))),
-    "files": files,
-}
-(root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-print(json.dumps({k: v for k, v in manifest.items() if k != "files"}, indent=2))
-PY
-
 expected_static=$((${#STATIC_2D[@]} + ${#STATIC_3D[@]}))
 actual_static=$(find "$OUTPUT/static" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_transparent=$(find "$OUTPUT/transparent" -maxdepth 1 -type f -name '*.png' | wc -l)
 actual_video=$(find "$OUTPUT/video" -maxdepth 1 -type f -name '*.mp4' | wc -l)
-actual_gif=$(find "$OUTPUT/gif" -maxdepth 1 -type f -name '*.gif' | wc -l)
 
 [[ "$actual_static" -eq "$expected_static" ]]
 [[ "$actual_transparent" -eq "${#TRANSPARENT_SCENES[@]}" ]]
 [[ "$actual_video" -eq "${#ANIMATIONS[@]}" ]]
-[[ "$actual_gif" -eq "${#ANIMATIONS[@]}" ]]
-[[ -f "$OUTPUT/contact_sheets/static-gallery.png" ]]
-[[ -f "$OUTPUT/contact_sheets/transparent-gallery.png" ]]
-[[ -f "$OUTPUT/index.html" ]]
 
-echo "Rendered $actual_static static PNGs, $actual_transparent transparent PNGs, $actual_video MP4s and $actual_gif GIFs."
+echo "Manim rendered $actual_static static PNGs, $actual_transparent transparent PNGs and $actual_video MP4s."
