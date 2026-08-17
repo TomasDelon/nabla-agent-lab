@@ -1,0 +1,102 @@
+name: Figurize official Manim alpha validation
+
+on:
+  push:
+    branches:
+      - agent/figurize-manim-render-validation
+    paths:
+      - "figurize-official-alpha/**"
+      - ".github/workflows/figurize-official-alpha.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render-official:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Render with pinned official Manim Community image
+        run: |
+          docker run --rm \
+            --user root \
+            -v "$PWD:/manim" \
+            -w /manim/figurize-official-alpha \
+            manimcommunity/manim:v0.20.1 \
+            bash -lc '
+              set -euo pipefail
+              apt-get update
+              DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends texlive-fonts-extra
+              luaotfload-tool --update --force >/dev/null
+              mkdir -p artifact/media-preview artifact/media-alpha
+              {
+                echo "manim=$(manim --version)"
+                echo "lualatex=$(lualatex --version | head -n 1)"
+                echo "xcharter_text=$(fc-match XCharter | head -n 1)"
+                echo "xcharter_math=$(luaotfload-tool --find="XCharter Math" 2>&1 | tail -n 4 | tr "\n" " ")"
+                echo "xcharter_math_file=$(kpsewhich XCharter-Math.otf)"
+              } > artifact/font-and-runtime-report.txt
+
+              manim -ql -s --format=png --disable_caching \
+                --media_dir artifact/media-preview \
+                -o figurize-official-preview \
+                official_smoke.py FigurizeOfficialSmoke
+
+              manim -ql -s --format=png --transparent --disable_caching \
+                --media_dir artifact/media-alpha \
+                -o figurize-official-transparent \
+                official_smoke.py FigurizeOfficialSmoke
+
+              preview=$(find artifact/media-preview -type f -name "figurize-official-preview*.png" | head -n 1)
+              transparent=$(find artifact/media-alpha -type f -name "figurize-official-transparent*.png" | head -n 1)
+              test -n "$preview" && test -f "$preview"
+              test -n "$transparent" && test -f "$transparent"
+              cp "$preview" artifact/figurize-official-preview.png
+              cp "$transparent" artifact/figurize-official-transparent.png
+
+              python - <<"PY"
+from pathlib import Path
+from PIL import Image
+import hashlib, json
+root = Path("artifact")
+alpha = Image.open(root / "figurize-official-transparent.png").convert("RGBA").getchannel("A").getextrema()
+if alpha[0] == 255:
+    raise SystemExit("transparent render has no transparent pixels")
+files = []
+for path in sorted(p for p in root.iterdir() if p.is_file()):
+    files.append({
+        "path": path.name,
+        "bytes": path.stat().st_size,
+        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+    })
+manifest = {
+    "renderer": "Manim Community v0.20.1 official Docker image",
+    "scene": "FigurizeOfficialSmoke",
+    "xcharter_text": True,
+    "xcharter_math": True,
+    "editorial_label_connectors": 0,
+    "point_shapes": ["filled_circle"],
+    "positive_area_role": "bertault_green",
+    "negative_area_role": "bertault_warm_red",
+    "transparent_alpha_extrema": alpha,
+    "files": files,
+}
+(root / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+PY
+            '
+
+      - name: Display validation manifest
+        run: cat figurize-official-alpha/artifact/manifest.json
+
+      - name: Upload official Manim render evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: figurize-official-alpha-smoke
+          path: figurize-official-alpha/artifact
+          if-no-files-found: error
+          retention-days: 30
