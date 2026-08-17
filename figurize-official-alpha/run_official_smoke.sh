@@ -2,7 +2,11 @@
 set -euo pipefail
 
 apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends texlive-fonts-extra
+DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+  texlive-fonts-extra \
+  texlive-luatex \
+  texlive-latex-extra \
+  dvisvgm
 luaotfload-tool --update --force >/dev/null
 
 rm -rf artifact
@@ -12,7 +16,12 @@ mkdir -p artifact/media-preview artifact/media-alpha
   echo "lualatex=$(lualatex --version | head -n 1)"
   echo "xcharter_text=$(fc-match XCharter | head -n 1)"
   echo "xcharter_math_file=$(kpsewhich XCharter-Math.otf)"
+  echo "luatex85=$(kpsewhich luatex85.sty)"
+  echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
+
+test -n "$(kpsewhich XCharter-Math.otf)"
+test -n "$(kpsewhich luatex85.sty)"
 
 manim -ql -s --format=png --disable_caching \
   --media_dir artifact/media-preview \
