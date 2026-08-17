@@ -1,17 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from manim import (
-    Axes,
-    Create,
-    DEGREES,
-    Dot,
-    MathTex,
-    Scene,
-    TexTemplate,
-    VGroup,
-    config,
-)
+from manim import Axes, Dot, MathTex, Scene, TexTemplate, VGroup, config
 from manim.mobject.geometry.tips import StealthTip
 
 PAPER = "#FAF9F5"
@@ -23,10 +13,7 @@ BERTAULT_WARM_RED = "#B45F4D"
 
 
 def xcharter_template() -> TexTemplate:
-    template = TexTemplate(
-        tex_compiler="lualatex",
-        output_format=".pdf",
-    )
+    template = TexTemplate(tex_compiler="lualatex", output_format=".pdf")
     template.add_to_preamble(r"\usepackage{fontspec}")
     template.add_to_preamble(r"\usepackage{unicode-math}")
     template.add_to_preamble(r"\setmainfont{XCharter}")
@@ -37,9 +24,8 @@ def xcharter_template() -> TexTemplate:
 class FigurizeOfficialSmoke(Scene):
     """Official Manim CE smoke test for the Figurize visual contracts.
 
-    The scene deliberately uses direct, same-colour labels and no editorial
-    connector line or arrow. Signed area is green above the axis and warm red
-    below it.
+    The scene uses direct, same-colour labels and no editorial connector line
+    or arrow. Signed area is green above the axis and warm red below it.
     """
 
     def construct(self):
@@ -95,6 +81,21 @@ class FigurizeOfficialSmoke(Scene):
             ]
         )
 
+        tangent_x = 1.0
+        tangent_y = function(tangent_x)
+        tangent_slope = 3 * tangent_x**2 - 2
+        tangent = axes.plot(
+            lambda x: tangent_y + tangent_slope * (x - tangent_x),
+            x_range=[0.55, 1.55],
+            color=BERTAULT_PURPLE,
+            stroke_width=3.0,
+        )
+        tangent_point = Dot(
+            axes.c2p(tangent_x, tangent_y),
+            radius=0.065,
+            color=BERTAULT_PURPLE,
+        )
+
         title = MathTex(
             r"f(x)=x^3-2x",
             tex_template=template,
@@ -119,14 +120,23 @@ class FigurizeOfficialSmoke(Scene):
             font_size=31,
             color=BERTAULT_WARM_RED,
         ).move_to(axes.c2p(0.72, -0.72))
-        derivative_label = MathTex(
-            r"f'(x)",
+        tangent_label = MathTex(
+            r"T_1",
             tex_template=template,
             font_size=30,
             color=BERTAULT_PURPLE,
-        ).to_corner(np.array([-1.0, -1.0, 0.0]), buff=0.35)
+        ).move_to(axes.c2p(1.48, tangent_y + tangent_slope * 0.48) + np.array([0.20, 0.12, 0.0]))
 
-        self.add(areas, axes, graph, roots, title, curve_label, positive_label, negative_label)
-        # Purple is present as a restrained secondary semantic sample. It is
-        # deliberately not connected to the curve by an editorial pointer.
-        self.add(derivative_label)
+        self.add(
+            areas,
+            axes,
+            graph,
+            roots,
+            tangent,
+            tangent_point,
+            title,
+            curve_label,
+            positive_label,
+            negative_label,
+            tangent_label,
+        )
