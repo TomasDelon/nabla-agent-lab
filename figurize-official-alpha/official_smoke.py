@@ -1,0 +1,132 @@
+from __future__ import annotations
+
+import numpy as np
+from manim import (
+    Axes,
+    Create,
+    DEGREES,
+    Dot,
+    MathTex,
+    Scene,
+    TexTemplate,
+    VGroup,
+    config,
+)
+from manim.mobject.geometry.tips import StealthTip
+
+PAPER = "#FAF9F5"
+GRAPHITE = "#1A1A18"
+BERTAULT_BLUE = "#758FB2"
+BERTAULT_GREEN = "#7F927A"
+BERTAULT_PURPLE = "#8C7896"
+BERTAULT_WARM_RED = "#B45F4D"
+
+
+def xcharter_template() -> TexTemplate:
+    template = TexTemplate(
+        tex_compiler="lualatex",
+        output_format=".pdf",
+    )
+    template.add_to_preamble(r"\usepackage{fontspec}")
+    template.add_to_preamble(r"\usepackage{unicode-math}")
+    template.add_to_preamble(r"\setmainfont{XCharter}")
+    template.add_to_preamble(r"\setmathfont{XCharter Math}")
+    return template
+
+
+class FigurizeOfficialSmoke(Scene):
+    """Official Manim CE smoke test for the Figurize visual contracts.
+
+    The scene deliberately uses direct, same-colour labels and no editorial
+    connector line or arrow. Signed area is green above the axis and warm red
+    below it.
+    """
+
+    def construct(self):
+        config.background_color = PAPER
+        template = xcharter_template()
+        axes = Axes(
+            x_range=[-2.4, 2.4, 1],
+            y_range=[-3.2, 3.2, 1],
+            x_length=9.2,
+            y_length=5.3,
+            tips=True,
+            axis_config={
+                "color": GRAPHITE,
+                "stroke_width": 2.0,
+                "include_ticks": True,
+                "include_numbers": False,
+                "tick_size": 0.055,
+                "tip_shape": StealthTip,
+                "tip_length": 0.16,
+                "tip_width": 0.09,
+            },
+        ).shift(0.2 * np.array([0.0, -1.0, 0.0]))
+
+        function = lambda x: x**3 - 2 * x
+        graph = axes.plot(
+            function,
+            x_range=[-2.05, 2.05],
+            color=BERTAULT_BLUE,
+            stroke_width=4.0,
+        )
+        sqrt2 = np.sqrt(2)
+        signed_parts = [
+            (-2.0, -sqrt2, BERTAULT_WARM_RED),
+            (-sqrt2, 0.0, BERTAULT_GREEN),
+            (0.0, sqrt2, BERTAULT_WARM_RED),
+            (sqrt2, 2.0, BERTAULT_GREEN),
+        ]
+        areas = VGroup(
+            *[
+                axes.get_area(
+                    graph,
+                    x_range=[left, right],
+                    color=color,
+                    opacity=0.34,
+                )
+                for left, right, color in signed_parts
+            ]
+        )
+        roots = VGroup(
+            *[
+                Dot(axes.c2p(value, 0), radius=0.065, color=BERTAULT_BLUE)
+                for value in (-sqrt2, 0.0, sqrt2)
+            ]
+        )
+
+        title = MathTex(
+            r"f(x)=x^3-2x",
+            tex_template=template,
+            font_size=42,
+            color=GRAPHITE,
+        ).to_edge(np.array([0.0, 1.0, 0.0]), buff=0.28)
+        curve_label = MathTex(
+            r"f",
+            tex_template=template,
+            font_size=34,
+            color=BERTAULT_BLUE,
+        ).move_to(axes.c2p(1.82, function(1.82)) + np.array([0.26, 0.12, 0.0]))
+        positive_label = MathTex(
+            r"\mathcal A^{+}",
+            tex_template=template,
+            font_size=31,
+            color=BERTAULT_GREEN,
+        ).move_to(axes.c2p(-0.72, 0.72))
+        negative_label = MathTex(
+            r"\mathcal A^{-}",
+            tex_template=template,
+            font_size=31,
+            color=BERTAULT_WARM_RED,
+        ).move_to(axes.c2p(0.72, -0.72))
+        derivative_label = MathTex(
+            r"f'(x)",
+            tex_template=template,
+            font_size=30,
+            color=BERTAULT_PURPLE,
+        ).to_corner(np.array([-1.0, -1.0, 0.0]), buff=0.35)
+
+        self.add(areas, axes, graph, roots, title, curve_label, positive_label, negative_label)
+        # Purple is present as a restrained secondary semantic sample. It is
+        # deliberately not connected to the curve by an editorial pointer.
+        self.add(derivative_label)
