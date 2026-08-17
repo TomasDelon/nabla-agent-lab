@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-from manim import Axes, Dot, MathTex, Scene, TexTemplate, VGroup, config
+from manim import Axes, Dot, MathTex, Scene, TexTemplate, VGroup
 from manim.mobject.geometry.tips import StealthTip
 
 PAPER = "#FAF9F5"
@@ -17,7 +17,9 @@ def xcharter_template() -> TexTemplate:
     template.add_to_preamble(r"\usepackage{fontspec}")
     template.add_to_preamble(r"\usepackage{unicode-math}")
     template.add_to_preamble(r"\setmainfont{XCharter}")
-    template.add_to_preamble(r"\setmathfont{XCharter Math}")
+    template.add_to_preamble(
+        r"\setmathfont{XCharter-Math.otf}[Path=/usr/local/share/fonts/figurize/]"
+    )
     return template
 
 
@@ -29,7 +31,7 @@ class FigurizeOfficialSmoke(Scene):
     """
 
     def construct(self):
-        config.background_color = PAPER
+        self.camera.background_color = PAPER
         template = xcharter_template()
         axes = Axes(
             x_range=[-2.4, 2.4, 1],
@@ -44,10 +46,11 @@ class FigurizeOfficialSmoke(Scene):
                 "include_numbers": False,
                 "tick_size": 0.055,
                 "tip_shape": StealthTip,
-                "tip_length": 0.16,
-                "tip_width": 0.09,
             },
         ).shift(0.2 * np.array([0.0, -1.0, 0.0]))
+        for axis in (axes.x_axis, axes.y_axis):
+            if axis.has_tip():
+                axis.get_tip().scale(0.55)
 
         function = lambda x: x**3 - 2 * x
         graph = axes.plot(
@@ -125,7 +128,10 @@ class FigurizeOfficialSmoke(Scene):
             tex_template=template,
             font_size=30,
             color=BERTAULT_PURPLE,
-        ).move_to(axes.c2p(1.48, tangent_y + tangent_slope * 0.48) + np.array([0.20, 0.12, 0.0]))
+        ).move_to(
+            axes.c2p(1.48, tangent_y + tangent_slope * 0.48)
+            + np.array([0.20, 0.12, 0.0])
+        )
 
         self.add(
             areas,
