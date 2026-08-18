@@ -31,7 +31,10 @@ jobs:
         run: |
           set -euo pipefail
           echo "3410aa3390c9265b552e92fe7cc94f1435e7d15864f039be45f6b910303a6a50  engine-source/part-07a.b64" | sha256sum --check
-          echo "6fc705c9dee2e465f48017fe45aa39973e07dc3a37be854c51060729fc62d488  engine-source/part-07b.b64" | sha256sum --check
+          # part-07b is the corrected 4,000-character second half followed by
+          # the original 2,204-character final chunk. The authoritative check
+          # is the SHA-256 of the reconstructed ZIP below.
+          test "$(wc -c < engine-source/part-07b.b64)" -eq 6204
           cat \
             engine-source/part-00.b64 \
             engine-source/part-01.b64 \
@@ -42,7 +45,6 @@ jobs:
             engine-source/part-06.b64 \
             engine-source/part-07a.b64 \
             engine-source/part-07b.b64 \
-            engine-source/part-08.b64 \
             | base64 --decode > figurize-engine-source-v1.0.0.zip
           echo "bd9add7ff8e5bb3067f245599203de40ad9d29caf2fcc73facc4dc2e8001de33  figurize-engine-source-v1.0.0.zip" | sha256sum --check
           unzip -q figurize-engine-source-v1.0.0.zip
