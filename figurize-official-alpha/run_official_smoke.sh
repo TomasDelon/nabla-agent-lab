@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+export TERM=xterm
 
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -10,29 +11,28 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   texlive-latex-extra \
   dvisvgm
 
-# Debian TeX Live contains XCharter text, but its snapshot can predate the
-# XCharter Math OpenType package. Fetch the current CTAN font at build time.
-# The font is used in the ephemeral CI environment and is not redistributed.
+# Debian TeX Live contains XCharter text. XCharter Math is fetched only into
+# the ephemeral CI container and referenced by absolute Path from LuaLaTeX.
+# It is never committed to the repository or redistributed in artifacts.
 install -d /usr/local/share/fonts/figurize
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
-fc-cache -f
-luaotfload-tool --update --force >/dev/null
+fc-cache -f >/dev/null 2>&1 || true
 
 rm -rf artifact
 mkdir -p artifact/media-preview artifact/media-alpha
 {
   echo "manim=$(manim --version)"
   echo "lualatex=$(lualatex --version | head -n 1)"
-  echo "xcharter_text=$(fc-match XCharter | head -n 1)"
-  echo "xcharter_math=$(fc-match 'XCharter Math' | head -n 1)"
+  echo "xcharter_text_package=$(kpsewhich XCharter.sty)"
   echo "xcharter_math_file=/usr/local/share/fonts/figurize/XCharter-Math.otf"
   echo "luatex85=$(kpsewhich luatex85.sty)"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
+test -n "$(kpsewhich XCharter.sty)"
 test -n "$(kpsewhich luatex85.sty)"
 
 manim -ql -s --format=png --disable_caching \
