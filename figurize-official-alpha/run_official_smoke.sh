@@ -49,7 +49,11 @@ luatex85_dir=$(dirname "$luatex85_ins")
 luatex85_sty=$(find /tmp/luatex85 -type f -name 'luatex85.sty' | head -n 1)
 test -n "$luatex85_sty" && test -s "$luatex85_sty"
 cp "$luatex85_sty" /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
-mktexlsr /usr/local/share/texmf >/dev/null
+
+# Explicitly expose the compatibility directory to every LuaLaTeX subprocess
+# launched by Manim. The trailing colon preserves TeX's normal search path.
+export TEXINPUTS="/usr/local/share/texmf/tex/generic/luatex85//:"
+mktexlsr /usr/local/share/texmf >/dev/null || true
 fc-cache -f >/dev/null 2>&1 || true
 
 {
@@ -58,6 +62,7 @@ fc-cache -f >/dev/null 2>&1 || true
   echo "xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf"
   echo "xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf"
   echo "luatex85=$(kpsewhich luatex85.sty)"
+  echo "texinputs=$TEXINPUTS"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
 
