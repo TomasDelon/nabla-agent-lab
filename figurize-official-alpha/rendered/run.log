@@ -1,12 +1,12 @@
 == Figurize official Manim smoke ==
-started_at=2026-08-18T11:58:39Z
+started_at=2026-08-18T12:02:20Z
 Get:1 http://deb.debian.org/debian trixie InRelease [140 kB]
 Get:2 http://deb.debian.org/debian trixie-updates InRelease [47.3 kB]
 Get:3 http://deb.debian.org/debian-security trixie-security InRelease [43.4 kB]
 Get:4 http://deb.debian.org/debian trixie/main amd64 Packages [9673 kB]
 Get:5 http://deb.debian.org/debian trixie-updates/main amd64 Packages [4412 B]
 Get:6 http://deb.debian.org/debian-security trixie-security/main amd64 Packages [243 kB]
-Fetched 10.2 MB in 1s (12.8 MB/s)
+Fetched 10.2 MB in 1s (11.4 MB/s)
 Reading package lists...
 Reading package lists...
 Building dependency tree...
@@ -32,28 +32,16 @@ Suggested packages:
   make libtap-harness-archive-perl python3-doc python3-tk python3-venv
   python3.13-venv python3.13-doc binutils binfmt-support debhelper perl-tk
   xpdf | pdf-viewer xzdec texlive-binaries-sse2 hintview
-  texlive-fonts-extra-doc texlive-latex-base-doc wp2latex python3-pygments
-  icc-profiles libfile-which-perl texlive-latex-extra-doc texlive-science
+  texlive-latex-base-doc wp2latex python3-pygments icc-profiles
+  libfile-which-perl texlive-latex-extra-doc texlive-science
   texlive-latex-recommended-doc texlive-pstricks dot2tex prerex
-  texlive-pictures-doc vprerex
+  texlive-pictures-doc vprerex zip
 Recommended packages:
   bash-completion mupdf-tools javascript-common libldap-common publicsuffix
-  libsasl2-modules psmisc linux-sysctl-defaults cm-super fonts-adf-accanthis
-  fonts-adf-berenis fonts-adf-gillius fonts-adf-universalis fonts-cabin
-  fonts-cantarell fonts-clear-sans fonts-comfortaa fonts-comic-neue
-  fonts-croscore fonts-crosextra-caladea fonts-crosextra-carlito
-  fonts-dejavu-core fonts-dejavu-extra fonts-ebgaramond-extra
-  fonts-font-awesome fonts-freefont-otf fonts-freefont-ttf fonts-gfs-artemisia
-  fonts-gfs-complutum fonts-gfs-didot fonts-gfs-neohellenic fonts-gfs-olga
-  fonts-gfs-solomos fonts-go fonts-inter fonts-lato fonts-linuxlibertine
-  fonts-lobstertwo fonts-noto-color-emoji fonts-oflb-asana-math
-  fonts-open-sans fonts-paratype fonts-roboto-slab fonts-roboto-unhinted
-  fonts-sil-andika fonts-sil-charis fonts-sil-gentium fonts-sil-gentium-basic
-  fonts-sil-gentiumplus fonts-sil-gentiumplus-compact fonts-stix
-  texlive-fonts-extra-links texlive-fonts-recommended default-jre
-  libspreadsheet-parseexcel-perl texlive-plain-generic ruby tk
-  libfile-mimeinfo-perl libnet-dbus-perl libx11-protocol-perl x11-utils
-  x11-xserver-utils
+  libsasl2-modules psmisc linux-sysctl-defaults default-jre
+  libspreadsheet-parseexcel-perl texlive-fonts-recommended
+  texlive-plain-generic ruby tk libfile-mimeinfo-perl libnet-dbus-perl
+  libx11-protocol-perl x11-utils x11-xserver-utils
 The following NEW packages will be installed:
   curl dvisvgm fonts-lmodern libapache-pom-java libcommons-logging-java
   libcommons-parent-java libcurl4t64 libfontbox-java libgdbm-compat4t64
@@ -66,11 +54,12 @@ The following NEW packages will be installed:
   libzzip-0-13t64 lmodern media-types perl perl-modules-5.40
   preview-latex-style procps python3 python3-minimal python3.13
   python3.13-minimal sensible-utils t1utils tex-common texlive-base
-  texlive-binaries texlive-fonts-extra texlive-latex-base texlive-latex-extra
-  texlive-latex-recommended texlive-luatex texlive-pictures ucf xdg-utils
+  texlive-binaries texlive-latex-base texlive-latex-extra
+  texlive-latex-recommended texlive-luatex texlive-pictures ucf unzip
+  xdg-utils
 0 upgraded, 65 newly installed, 0 to remove and 46 not upgraded.
-Need to get 787 MB of archives.
-After this operation, 2287 MB of additional disk space will be used.
+Need to get 163 MB of archives.
+After this operation, 542 MB of additional disk space will be used.
 Get:1 http://deb.debian.org/debian trixie-updates/main amd64 libpython3.13-minimal amd64 3.13.5-2+deb13u4 [863 kB]
 Get:2 http://deb.debian.org/debian trixie-updates/main amd64 python3.13-minimal amd64 3.13.5-2+deb13u4 [2217 kB]
 Get:3 http://deb.debian.org/debian trixie/main amd64 python3-minimal amd64 3.13.5-1 [27.2 kB]
@@ -130,14 +119,14 @@ Get:56 http://deb.debian.org/debian trixie/main amd64 t1utils amd64 1.41-4 [62.1
 Get:57 http://deb.debian.org/debian trixie/main amd64 texlive-binaries amd64 2024.20240313.70630+ds-6 [8446 kB]
 Get:58 http://deb.debian.org/debian trixie/main amd64 xdg-utils all 1.2.1-2 [75.8 kB]
 Get:59 http://deb.debian.org/debian trixie/main amd64 texlive-base all 2024.20250309-1 [23.1 MB]
-Get:60 http://deb.debian.org/debian trixie/main amd64 texlive-fonts-extra all 2024.20250309-2 [624 MB]
-Get:61 http://deb.debian.org/debian trixie/main amd64 texlive-latex-base all 2024.20250309-1 [1294 kB]
-Get:62 http://deb.debian.org/debian trixie/main amd64 texlive-latex-recommended all 2024.20250309-1 [8745 kB]
-Get:63 http://deb.debian.org/debian trixie/main amd64 texlive-pictures all 2024.20250309-1 [17.0 MB]
-Get:64 http://deb.debian.org/debian trixie/main amd64 texlive-latex-extra all 2024.20250309-2 [25.2 MB]
-Get:65 http://deb.debian.org/debian trixie/main amd64 texlive-luatex all 2024.20250309-1 [29.1 MB]
+Get:60 http://deb.debian.org/debian trixie/main amd64 texlive-latex-base all 2024.20250309-1 [1294 kB]
+Get:61 http://deb.debian.org/debian trixie/main amd64 texlive-latex-recommended all 2024.20250309-1 [8745 kB]
+Get:62 http://deb.debian.org/debian trixie/main amd64 texlive-pictures all 2024.20250309-1 [17.0 MB]
+Get:63 http://deb.debian.org/debian trixie/main amd64 texlive-latex-extra all 2024.20250309-2 [25.2 MB]
+Get:64 http://deb.debian.org/debian trixie/main amd64 texlive-luatex all 2024.20250309-1 [29.1 MB]
+Get:65 http://deb.debian.org/debian-security trixie-security/main amd64 unzip amd64 6.0-29+deb13u1 [173 kB]
 Preconfiguring packages ...
-Fetched 787 MB in 3s (236 MB/s)
+Fetched 163 MB in 1s (162 MB/s)
 Selecting previously unselected package libpython3.13-minimal:amd64.
 (Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 8339 files and directories currently installed.)
 Preparing to unpack .../libpython3.13-minimal_3.13.5-2+deb13u4_amd64.deb ...
@@ -322,24 +311,24 @@ Unpacking xdg-utils (1.2.1-2) ...
 Selecting previously unselected package texlive-base.
 Preparing to unpack .../51-texlive-base_2024.20250309-1_all.deb ...
 Unpacking texlive-base (2024.20250309-1) ...
-Selecting previously unselected package texlive-fonts-extra.
-Preparing to unpack .../52-texlive-fonts-extra_2024.20250309-2_all.deb ...
-Unpacking texlive-fonts-extra (2024.20250309-2) ...
 Selecting previously unselected package texlive-latex-base.
-Preparing to unpack .../53-texlive-latex-base_2024.20250309-1_all.deb ...
+Preparing to unpack .../52-texlive-latex-base_2024.20250309-1_all.deb ...
 Unpacking texlive-latex-base (2024.20250309-1) ...
 Selecting previously unselected package texlive-latex-recommended.
-Preparing to unpack .../54-texlive-latex-recommended_2024.20250309-1_all.deb ...
+Preparing to unpack .../53-texlive-latex-recommended_2024.20250309-1_all.deb ...
 Unpacking texlive-latex-recommended (2024.20250309-1) ...
 Selecting previously unselected package texlive-pictures.
-Preparing to unpack .../55-texlive-pictures_2024.20250309-1_all.deb ...
+Preparing to unpack .../54-texlive-pictures_2024.20250309-1_all.deb ...
 Unpacking texlive-pictures (2024.20250309-1) ...
 Selecting previously unselected package texlive-latex-extra.
-Preparing to unpack .../56-texlive-latex-extra_2024.20250309-2_all.deb ...
+Preparing to unpack .../55-texlive-latex-extra_2024.20250309-2_all.deb ...
 Unpacking texlive-latex-extra (2024.20250309-2) ...
 Selecting previously unselected package texlive-luatex.
-Preparing to unpack .../57-texlive-luatex_2024.20250309-1_all.deb ...
+Preparing to unpack .../56-texlive-luatex_2024.20250309-1_all.deb ...
 Unpacking texlive-luatex (2024.20250309-1) ...
+Selecting previously unselected package unzip.
+Preparing to unpack .../57-unzip_6.0-29+deb13u1_amd64.deb ...
+Unpacking unzip (6.0-29+deb13u1) ...
 Setting up media-types (13.0.0) ...
 Setting up libtext-charwidth-perl:amd64 (0.04-11+b4) ...
 Setting up libxmu6:amd64 (2:1.1.3-3+b4) ...
@@ -347,6 +336,7 @@ Setting up libxpm4:amd64 (1:3.5.17-1+deb13u1) ...
 Setting up libxi6:amd64 (2:1.8.2-1) ...
 Setting up libwoff1:amd64 (1.0.2-2+b2) ...
 Setting up libgdbm-compat4t64:amd64 (1.24-2) ...
+Setting up unzip (6.0-29+deb13u1) ...
 Setting up libfontbox-java (1:1.8.16-5) ...
 Setting up libpsl5t64:amd64 (0.21.2-1.1+b1) ...
 Setting up libnghttp2-14:amd64 (1.64.0-1.1+deb13u1) ...
@@ -408,7 +398,6 @@ tl-paper: setting paper size for pdftex to a4: /var/lib/texmf/tex/generic/tex-in
 Setting up texlive-luatex (2024.20250309-1) ...
 Setting up preview-latex-style (13.2-1.1) ...
 Setting up texlive-latex-base (2024.20250309-1) ...
-Setting up texlive-fonts-extra (2024.20250309-2) ...
 Setting up texlive-latex-recommended (2024.20250309-1) ...
 Setting up texlive-pictures (2024.20250309-1) ...
 Setting up texlive-latex-extra (2024.20250309-2) ...
@@ -421,11 +410,134 @@ Building format(s) --all.
 	This may take some time... done.
   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
                                  Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   332  100   332    0     0    408      0 --:--:-- --:--:-- --:--:--   407
-100  402k  100  402k    0     0   261k      0  0:00:01  0:00:01 --:--:--  261k
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0100   285  100   285    0     0     50      0  0:00:05  0:00:05 --:--:--    64
+  1 5892k    1 95950    0     0  15310      0  0:06:34  0:00:06  0:06:28 15310100 5892k  100 5892k    0     0   853k      0  0:00:06  0:00:06 --:--:-- 9146k
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0100   316  100   316    0     0    614      0 --:--:-- --:--:-- --:--:--   613
+ 77  402k   77  312k    0     0   263k      0  0:00:01  0:00:01 --:--:--  263k100  402k  100  402k    0     0   327k      0  0:00:01  0:00:01 --:--:-- 2254k
 manim=Manim Community v0.20.1
 lualatex=This is LuaHBTeX, Version 1.22.0 (TeX Live 2025)
-xcharter_text_package=
-xcharter_math_file=/usr/local/share/fonts/figurize/XCharter-Math.otf
-luatex85=
+xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf
+xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf
 dvisvgm=dvisvgm 3.4.3
+Manim Community v0.20.1
+
+[08/18/26 12:03:27] INFO     Writing                     tex_file_writing.py:110
+                             \special{dvisvgm:raw <g                            
+                             id='unique000'>}f(x)=x^3-2x                        
+                             \special{dvisvgm:raw </g>}                         
+                             to                                                 
+                             artifact/media-preview/Tex/                        
+                             87fca58c61990a3b.tex                               
+[08/18/26 12:03:28] ERROR    LaTeX compilation error:    tex_file_writing.py:313
+                             LaTeX Error: File                                  
+                             `luatex85.sty' not found.                          
+                                                                                
+                    ERROR    LaTeX compilation error:    tex_file_writing.py:313
+                             Emergency stop.                                    
+                                                                                
+                    ERROR    LaTeX compilation error:    tex_file_writing.py:313
+                             ==> Fatal error occurred,                          
+                             no output PDF file                                 
+                             produced!                                          
+                                                                                
+╭───────────────────── Traceback (most recent call last) ──────────────────────╮
+│ /opt/venv/lib/python3.14/site-packages/manim/cli/render/commands.py:125 in   │
+│ render                                                                       │
+│                                                                              │
+│   122 │   │   │   try:                                                       │
+│   123 │   │   │   │   with tempconfig({}):                                   │
+│   124 │   │   │   │   │   scene = SceneClass()                               │
+│ ❱ 125 │   │   │   │   │   scene.render()                                     │
+│   126 │   │   │   except Exception:                                          │
+│   127 │   │   │   │   error_console.print_exception()                        │
+│   128 │   │   │   │   sys.exit(1)                                            │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/scene/scene.py:259 in render    │
+│                                                                              │
+│    256 │   │   """                                                           │
+│    257 │   │   self.setup()                                                  │
+│    258 │   │   try:                                                          │
+│ ❱  259 │   │   │   self.construct()                                          │
+│    260 │   │   except EndSceneEarlyException:                                │
+│    261 │   │   │   pass                                                      │
+│    262 │   │   except RerunSceneException:                                   │
+│                                                                              │
+│ /manim/figurize-official-alpha/official_smoke.py:100 in construct            │
+│                                                                              │
+│    97 │   │   │   color=BERTAULT_PURPLE,                                     │
+│    98 │   │   )                                                              │
+│    99 │   │                                                                  │
+│ ❱ 100 │   │   title = MathTex(                                               │
+│   101 │   │   │   r"f(x)=x^3-2x",                                            │
+│   102 │   │   │   tex_template=template,                                     │
+│   103 │   │   │   font_size=42,                                              │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/mobject/text/tex_mobject.py:306 │
+│ in __init__                                                                  │
+│                                                                              │
+│   303 │   │   │   joined_string = self._join_tex_strings_with_unique_delimin │
+│   304 │   │   │   │   self.tex_strings, self.substrings_to_isolate           │
+│   305 │   │   │   )                                                          │
+│ ❱ 306 │   │   │   super().__init__(                                          │
+│   307 │   │   │   │   joined_string,                                         │
+│   308 │   │   │   │   tex_environment=self.tex_environment,                  │
+│   309 │   │   │   │   tex_template=self.tex_template,                        │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/mobject/text/tex_mobject.py:81  │
+│ in __init__                                                                  │
+│                                                                              │
+│    78 │   │   self.tex_template: TexTemplate = tex_template                  │
+│    79 │   │                                                                  │
+│    80 │   │   self.tex_string = tex_string                                   │
+│ ❱  81 │   │   file_name = tex_to_svg_file(                                   │
+│    82 │   │   │   self._get_modified_expression(tex_string),                 │
+│    83 │   │   │   environment=self.tex_environment,                          │
+│    84 │   │   │   tex_template=self.tex_template,                            │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/utils/tex_file_writing.py:65 in │
+│ tex_to_svg_file                                                              │
+│                                                                              │
+│    62 │   if svg_file.exists():                                              │
+│    63 │   │   return svg_file                                                │
+│    64 │                                                                      │
+│ ❱  65 │   dvi_file = compile_tex(                                            │
+│    66 │   │   tex_file,                                                      │
+│    67 │   │   tex_template.tex_compiler,                                     │
+│    68 │   │   tex_template.output_format,                                    │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/utils/tex_file_writing.py:210   │
+│ in compile_tex                                                               │
+│                                                                              │
+│   207 │   │   cp = subprocess.run(command, stdout=subprocess.DEVNULL)        │
+│   208 │   │   if cp.returncode != 0:                                         │
+│   209 │   │   │   log_file = tex_file.with_suffix(".log")                    │
+│ ❱ 210 │   │   │   print_all_tex_errors(log_file, tex_compiler, tex_file)     │
+│   211 │   │   │   raise ValueError(                                          │
+│   212 │   │   │   │   f"{tex_compiler} error converting to"                  │
+│   213 │   │   │   │   f" {output_format[1:]}. See log output above or"       │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/utils/tex_file_writing.py:293   │
+│ in print_all_tex_errors                                                      │
+│                                                                              │
+│   290 │   │   with tex_file.open(encoding="utf-8") as f:                     │
+│   291 │   │   │   tex = f.readlines()                                        │
+│   292 │   │   for error_index in error_indices:                              │
+│ ❱ 293 │   │   │   print_tex_error(tex_compilation_log, error_index, tex)     │
+│   294                                                                        │
+│   295                                                                        │
+│   296 LATEX_ERROR_INSIGHTS = [                                               │
+│                                                                              │
+│ /opt/venv/lib/python3.14/site-packages/manim/utils/tex_file_writing.py:321   │
+│ in print_tex_error                                                           │
+│                                                                              │
+│   318 │   # failure. This code finds the next such line after the error curr │
+│   319 │   line_of_tex_error = (                                              │
+│   320 │   │   int(                                                           │
+│ ❱ 321 │   │   │   [                                                          │
+│   322 │   │   │   │   log_line                                               │
+│   323 │   │   │   │   for log_line in tex_compilation_log[error_start_index: │
+│   324 │   │   │   │   if log_line.startswith("l.")                           │
+╰──────────────────────────────────────────────────────────────────────────────╯
+IndexError: list index out of range
