@@ -24,6 +24,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Render with pinned official Manim Community image
+        id: render
+        continue-on-error: true
         run: |
           docker run --rm \
             --user root \
@@ -32,32 +34,42 @@ jobs:
             manimcommunity/manim:v0.20.1 \
             bash run_official_smoke.sh
 
-      - name: Display validation manifest
-        run: cat figurize-official-alpha/artifact/manifest.json
-
-      - name: Publish curated render evidence to branch
+      - name: Publish render evidence or diagnostics to branch
+        if: always()
         run: |
-          sudo chown -R "$USER:$USER" figurize-official-alpha/artifact
+          if [ -d figurize-official-alpha/artifact ]; then
+            sudo chown -R "$USER:$USER" figurize-official-alpha/artifact
+          fi
           rm -rf figurize-official-alpha/rendered
           mkdir -p figurize-official-alpha/rendered
-          cp figurize-official-alpha/artifact/figurize-official-preview.png figurize-official-alpha/rendered/
-          cp figurize-official-alpha/artifact/figurize-official-transparent.png figurize-official-alpha/rendered/
-          cp figurize-official-alpha/artifact/manifest.json figurize-official-alpha/rendered/
-          cp figurize-official-alpha/artifact/font-and-runtime-report.txt figurize-official-alpha/rendered/
+          for f in \
+            figurize-official-alpha/artifact/figurize-official-preview.png \
+            figurize-official-alpha/artifact/figurize-official-transparent.png \
+            figurize-official-alpha/artifact/manifest.json \
+            figurize-official-alpha/artifact/font-and-runtime-report.txt \
+            figurize-official-alpha/artifact/run.log \
+            figurize-official-alpha/artifact/exit-status.txt; do
+            if [ -f "$f" ]; then cp "$f" figurize-official-alpha/rendered/; fi
+          done
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add figurize-official-alpha/rendered
           if git diff --cached --quiet; then
-            echo "Rendered evidence is unchanged."
+            echo "Published evidence is unchanged."
           else
             git commit -m "Publish official Manim render evidence"
             git push
           fi
 
       - name: Upload official Manim render evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: figurize-official-alpha-smoke
           path: figurize-official-alpha/artifact
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 30
+
+      - name: Fail workflow when renderer failed
+        if: steps.render.outcome != 'success'
+        run: exit 1
