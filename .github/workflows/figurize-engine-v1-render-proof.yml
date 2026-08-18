@@ -1,0 +1,42 @@
+name: Figurize Engine v1 render proof
+
+on:
+  push:
+    branches:
+      - agent/figurize-engine-v1-render-proof
+    paths:
+      - "validation/**"
+      - ".github/workflows/figurize-engine-v1-render-proof.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+
+      - name: Render mathematical gallery with official Manim only
+        run: |
+          docker run --rm \
+            --user root \
+            -v "$PWD:/manim" \
+            -w /manim/validation \
+            manimcommunity/manim:v0.20.1 \
+            bash run.sh
+
+      - name: Show validation manifest
+        run: cat validation/output/manifest.json
+
+      - name: Upload real Manim artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: figurize-engine-v1-manim-proof
+          path: validation/output
+          if-no-files-found: error
+          retention-days: 30
