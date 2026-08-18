@@ -7,6 +7,12 @@ on:
     paths:
       - "engine-source/**"
       - ".github/workflows/figurize-engine-v1.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "engine-source/**"
+      - ".github/workflows/figurize-engine-v1.yml"
   workflow_dispatch:
 
 permissions:
