@@ -19,9 +19,10 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   texlive-latex-extra \
   dvisvgm
 
-# Install XCharter and XCharter Math only in the ephemeral CI container.
-# Font files are not committed and are not included in the uploaded artifact.
-install -d /usr/local/share/fonts/figurize /tmp/xcharter
+# Install XCharter, XCharter Math, and the small luatex85 compatibility package
+# only in the ephemeral CI container. None of these files are committed or
+# included in the published artifact.
+install -d /usr/local/share/fonts/figurize /tmp/xcharter /tmp/luatex85
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter.zip \
   --output /tmp/xcharter.zip
@@ -31,6 +32,14 @@ find /tmp/xcharter -type f -name '*.otf' -exec cp {} /usr/local/share/fonts/figu
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
+
+curl --fail --location --retry 4 \
+  https://mirrors.ctan.org/macros/generic/luatex85.zip \
+  --output /tmp/luatex85.zip
+unzip -q /tmp/luatex85.zip -d /tmp/luatex85
+install -d /usr/local/share/texmf/tex/generic/luatex85
+find /tmp/luatex85 -type f -name 'luatex85.sty' -exec cp {} /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty \;
+mktexlsr /usr/local/share/texmf >/dev/null
 fc-cache -f >/dev/null 2>&1 || true
 
 {
@@ -38,6 +47,7 @@ fc-cache -f >/dev/null 2>&1 || true
   echo "lualatex=$(lualatex --version | head -n 1)"
   echo "xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf"
   echo "xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf"
+  echo "luatex85=$(kpsewhich luatex85.sty)"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
 
@@ -45,6 +55,7 @@ cat artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Roman.otf
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
+test -n "$(kpsewhich luatex85.sty)"
 
 manim -ql -s --format=png --disable_caching \
   --media_dir artifact/media-preview \
