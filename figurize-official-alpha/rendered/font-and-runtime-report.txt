@@ -1,5 +1,0 @@
-manim=Manim Community v0.20.1
-xelatex=XeTeX 3.141592653-2.6-0.999997 (TeX Live 2025)
-xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf
-xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf
-dvisvgm=dvisvgm 3.4.3
