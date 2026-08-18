@@ -30,7 +30,9 @@ jobs:
       - name: Reconstruct and verify source bundle
         run: |
           set -euo pipefail
-          cat engine-source/part-*.b64 | base64 --decode > figurize-engine-source-v1.0.0.zip
+          sha256sum engine-source/part-*.b64
+          cat engine-source/part-*.b64 | base64 --decode --ignore-garbage > figurize-engine-source-v1.0.0.zip
+          sha256sum figurize-engine-source-v1.0.0.zip
           echo "bd9add7ff8e5bb3067f245599203de40ad9d29caf2fcc73facc4dc2e8001de33  figurize-engine-source-v1.0.0.zip" | sha256sum --check
           unzip -q figurize-engine-source-v1.0.0.zip
           test -f figurize-engine/Dockerfile
