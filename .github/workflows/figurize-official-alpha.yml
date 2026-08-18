@@ -5,12 +5,14 @@ on:
     branches:
       - agent/figurize-manim-render-validation
     paths:
-      - "figurize-official-alpha/**"
+      - "figurize-official-alpha/official_smoke.py"
+      - "figurize-official-alpha/run_official_smoke.sh"
+      - "figurize-official-alpha/validate_artifact.py"
       - ".github/workflows/figurize-official-alpha.yml"
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   render-official:
@@ -32,6 +34,25 @@ jobs:
 
       - name: Display validation manifest
         run: cat figurize-official-alpha/artifact/manifest.json
+
+      - name: Publish curated render evidence to branch
+        run: |
+          sudo chown -R "$USER:$USER" figurize-official-alpha/artifact
+          rm -rf figurize-official-alpha/rendered
+          mkdir -p figurize-official-alpha/rendered
+          cp figurize-official-alpha/artifact/figurize-official-preview.png figurize-official-alpha/rendered/
+          cp figurize-official-alpha/artifact/figurize-official-transparent.png figurize-official-alpha/rendered/
+          cp figurize-official-alpha/artifact/manifest.json figurize-official-alpha/rendered/
+          cp figurize-official-alpha/artifact/font-and-runtime-report.txt figurize-official-alpha/rendered/
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add figurize-official-alpha/rendered
+          if git diff --cached --quiet; then
+            echo "Rendered evidence is unchanged."
+          else
+            git commit -m "Publish official Manim render evidence"
+            git push
+          fi
 
       - name: Upload official Manim render evidence
         uses: actions/upload-artifact@v4
