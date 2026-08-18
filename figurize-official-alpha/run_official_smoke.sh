@@ -2,6 +2,14 @@
 set -euo pipefail
 export TERM=xterm
 
+rm -rf artifact
+mkdir -p artifact/media-preview artifact/media-alpha
+exec > >(tee artifact/run.log) 2>&1
+trap 'status=$?; echo "$status" > artifact/exit-status.txt; exit $status' EXIT
+
+echo "== Figurize official Manim smoke =="
+echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
 apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   ca-certificates \
@@ -11,17 +19,14 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   texlive-latex-extra \
   dvisvgm
 
-# Debian TeX Live contains XCharter text. XCharter Math is fetched only into
-# the ephemeral CI container and referenced by absolute Path from LuaLaTeX.
-# It is never committed to the repository or redistributed in artifacts.
+# XCharter Math is fetched only into the ephemeral CI container and referenced
+# by an absolute Path from LuaLaTeX. It is never committed or redistributed.
 install -d /usr/local/share/fonts/figurize
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
 fc-cache -f >/dev/null 2>&1 || true
 
-rm -rf artifact
-mkdir -p artifact/media-preview artifact/media-alpha
 {
   echo "manim=$(manim --version)"
   echo "lualatex=$(lualatex --version | head -n 1)"
@@ -30,6 +35,8 @@ mkdir -p artifact/media-preview artifact/media-alpha
   echo "luatex85=$(kpsewhich luatex85.sty)"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
+
+cat artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
 test -n "$(kpsewhich XCharter.sty)"
@@ -53,3 +60,4 @@ cp "$preview" artifact/figurize-official-preview.png
 cp "$transparent" artifact/figurize-official-transparent.png
 
 python validate_artifact.py
+echo "finished_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
