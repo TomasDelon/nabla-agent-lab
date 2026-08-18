@@ -16,19 +16,17 @@ def xcharter_template() -> TexTemplate:
     template = TexTemplate(tex_compiler="lualatex", output_format=".pdf")
     template.add_to_preamble(r"\usepackage{fontspec}")
     template.add_to_preamble(r"\usepackage{unicode-math}")
-    template.add_to_preamble(r"\setmainfont{XCharter}")
     template.add_to_preamble(
-        r"\setmathfont{XCharter-Math.otf}[Path=/usr/local/share/fonts/figurize/]"
+        r"\setmainfont[Path=/usr/local/share/fonts/figurize/]{XCharter-Roman.otf}"
+    )
+    template.add_to_preamble(
+        r"\setmathfont[Path=/usr/local/share/fonts/figurize/]{XCharter-Math.otf}"
     )
     return template
 
 
 class FigurizeOfficialSmoke(Scene):
-    """Official Manim CE smoke test for the Figurize visual contracts.
-
-    The scene uses direct, same-colour labels and no editorial connector line
-    or arrow. Signed area is green above the axis and warm red below it.
-    """
+    """Official Manim CE smoke test for Figurize visual contracts."""
 
     def construct(self):
         self.camera.background_color = PAPER
