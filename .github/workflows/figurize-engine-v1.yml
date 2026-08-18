@@ -62,15 +62,27 @@ jobs:
             --cpus 4 \
             --memory 7g \
             --pids-limit 1024 \
-            figurize-engine-v1:ci)"
+            --entrypoint bash \
+            figurize-engine-v1:ci \
+            scripts/ci.sh)"
           cleanup() {
             docker rm -f "$cid" >/dev/null 2>&1 || true
           }
           trap cleanup EXIT
+
+          set +e
           docker start -a "$cid" 2>&1 | tee ci-logs/engine-ci.log
+          status="${PIPESTATUS[0]}"
+          set -e
+
           rm -rf figurize-engine/artifacts
           mkdir -p figurize-engine/artifacts
-          docker cp "$cid:/work/artifacts/." figurize-engine/artifacts/
+          docker cp "$cid:/work/artifacts/." figurize-engine/artifacts/ || true
+
+          if [ "$status" -ne 0 ]; then
+            echo "Engine container failed with status $status" >&2
+            exit "$status"
+          fi
           test -f figurize-engine/artifacts/dist/figurize-math-drawing-engine-v1.0.0.zip
 
       - name: Display final manifest and tests
