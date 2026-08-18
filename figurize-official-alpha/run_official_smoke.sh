@@ -16,6 +16,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   curl \
   unzip \
   texlive-xetex \
+  texlive-latex-recommended \
   texlive-latex-extra \
   dvisvgm
 
@@ -36,6 +37,7 @@ fc-cache -f >/dev/null 2>&1 || true
 {
   echo "manim=$(manim --version)"
   echo "xelatex=$(xelatex --version | head -n 1)"
+  echo "unicode_math=$(kpsewhich unicode-math.sty)"
   echo "xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf"
   echo "xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
@@ -45,6 +47,7 @@ cat artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Roman.otf
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
+test -n "$(kpsewhich unicode-math.sty)"
 command -v xelatex >/dev/null
 
 manim -ql -s --format=png --disable_caching \
