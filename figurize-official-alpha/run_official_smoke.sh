@@ -15,7 +15,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
   unzip \
-  texlive-luatex \
+  texlive-xetex \
   texlive-latex-extra \
   dvisvgm
 
@@ -31,38 +31,13 @@ find /tmp/xcharter -type f -name '*.otf' -exec cp {} /usr/local/share/fonts/figu
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
-
-# Manim's LuaLaTeX template imports luatex85. CTAN distributes this package as
-# documented sources, so generate luatex85.sty from its .ins/.dtx files.
-install -d /usr/local/share/texmf/tex/generic/luatex85 /tmp/luatex85
-curl --fail --location --retry 4 \
-  https://mirrors.ctan.org/macros/generic/luatex85.zip \
-  --output /tmp/luatex85.zip
-unzip -q /tmp/luatex85.zip -d /tmp/luatex85
-luatex85_ins=$(find /tmp/luatex85 -type f -name 'luatex85.ins' | head -n 1)
-test -n "$luatex85_ins" && test -f "$luatex85_ins"
-luatex85_dir=$(dirname "$luatex85_ins")
-(
-  cd "$luatex85_dir"
-  tex -interaction=nonstopmode luatex85.ins >/tmp/luatex85-generation.log
-)
-luatex85_sty=$(find /tmp/luatex85 -type f -name 'luatex85.sty' | head -n 1)
-test -n "$luatex85_sty" && test -s "$luatex85_sty"
-cp "$luatex85_sty" /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
-
-# Explicitly expose the compatibility directory to every LuaLaTeX subprocess
-# launched by Manim. The trailing colon preserves TeX's normal search path.
-export TEXINPUTS="/usr/local/share/texmf/tex/generic/luatex85//:"
-mktexlsr /usr/local/share/texmf >/dev/null || true
 fc-cache -f >/dev/null 2>&1 || true
 
 {
   echo "manim=$(manim --version)"
-  echo "lualatex=$(lualatex --version | head -n 1)"
+  echo "xelatex=$(xelatex --version | head -n 1)"
   echo "xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf"
   echo "xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf"
-  echo "luatex85=$(kpsewhich luatex85.sty)"
-  echo "texinputs=$TEXINPUTS"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
 
@@ -70,8 +45,7 @@ cat artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Roman.otf
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
-test -s /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
-test -n "$(kpsewhich luatex85.sty)"
+command -v xelatex >/dev/null
 
 manim -ql -s --format=png --disable_caching \
   --media_dir artifact/media-preview \
