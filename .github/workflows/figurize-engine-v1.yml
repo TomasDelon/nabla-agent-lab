@@ -1,0 +1,84 @@
+name: Figurize Engine v1 official Manim build
+
+on:
+  push:
+    branches:
+      - agent/figurize-engine-v1-final
+    paths:
+      - "engine-source/**"
+      - ".github/workflows/figurize-engine-v1.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-render-package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    steps:
+      - name: Check out engine branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct and verify source bundle
+        run: |
+          set -euo pipefail
+          cat engine-source/part-*.b64 | base64 --decode > figurize-engine-source-v1.0.0.zip
+          echo "bd9add7ff8e5bb3067f245599203de40ad9d29caf2fcc73facc4dc2e8001de33  figurize-engine-source-v1.0.0.zip" | sha256sum --check
+          unzip -q figurize-engine-source-v1.0.0.zip
+          test -f figurize-engine/Dockerfile
+          test -f figurize-engine/scripts/ci.sh
+          mkdir -p ci-logs figurize-engine/artifacts
+
+      - name: Build pinned official Manim CE runtime
+        run: |
+          set -euo pipefail
+          docker build --progress=plain -t figurize-engine-v1:ci figurize-engine 2>&1 | tee ci-logs/docker-build.log
+
+      - name: Run tests, render every scene, validate, and package
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            --user root \
+            --cpus 4 \
+            --memory 7g \
+            --pids-limit 1024 \
+            -v "$PWD/figurize-engine/artifacts:/work/artifacts" \
+            figurize-engine-v1:ci 2>&1 | tee ci-logs/engine-ci.log
+          sudo chown -R "$USER:$USER" figurize-engine/artifacts
+
+      - name: Display final manifest and tests
+        if: success()
+        run: |
+          cat figurize-engine/artifacts/manifest.json
+          printf '\n--- tests ---\n'
+          cat figurize-engine/artifacts/test-results.txt
+          test -f figurize-engine/artifacts/dist/figurize-math-drawing-engine-v1.0.0.zip
+
+      - name: Upload complete validated engine
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figurize-math-drawing-engine-v1.0.0
+          path: |
+            figurize-engine/artifacts/dist/figurize-math-drawing-engine-v1.0.0.zip
+            figurize-engine/artifacts/manifest.json
+            figurize-engine/artifacts/test-results.txt
+            figurize-engine/artifacts/font-report.txt
+            figurize-engine/artifacts/gallery
+            figurize-engine/artifacts/diagnostics
+            figurize-engine/artifacts/logs
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Upload failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: figurize-engine-v1-failure-evidence
+          path: |
+            ci-logs
+            figurize-engine/artifacts
+          if-no-files-found: warn
+          retention-days: 14
