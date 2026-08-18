@@ -2,4 +2,5 @@ manim=Manim Community v0.20.1
 lualatex=This is LuaHBTeX, Version 1.22.0 (TeX Live 2025)
 xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf
 xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf
+luatex85=
 dvisvgm=dvisvgm 3.4.3
