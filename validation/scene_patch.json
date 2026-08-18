@@ -1,0 +1,19 @@
+{
+  "patch_id": "add_tangent_at_1",
+  "result_scene_id": "function_signed_area_with_tangent",
+  "operations": [
+    {
+      "op": "add_component",
+      "component": {
+        "id": "tangent",
+        "type": "tangent_line",
+        "role": "secondary",
+        "payload": {
+          "at_x": 1.0,
+          "span": 1.6
+        },
+        "label": "T_1"
+      }
+    }
+  ]
+}
