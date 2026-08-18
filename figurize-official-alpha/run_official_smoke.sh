@@ -14,14 +14,20 @@ apt-get update
 DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   ca-certificates \
   curl \
-  texlive-fonts-extra \
+  unzip \
   texlive-luatex \
   texlive-latex-extra \
   dvisvgm
 
-# XCharter Math is fetched only into the ephemeral CI container and referenced
-# by an absolute Path from LuaLaTeX. It is never committed or redistributed.
-install -d /usr/local/share/fonts/figurize
+# Install XCharter and XCharter Math only in the ephemeral CI container.
+# Font files are not committed and are not included in the uploaded artifact.
+install -d /usr/local/share/fonts/figurize /tmp/xcharter
+curl --fail --location --retry 4 \
+  https://mirrors.ctan.org/fonts/xcharter.zip \
+  --output /tmp/xcharter.zip
+unzip -q /tmp/xcharter.zip -d /tmp/xcharter
+find /tmp/xcharter -type f -name '*.otf' -exec cp {} /usr/local/share/fonts/figurize/ \;
+
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
@@ -30,17 +36,15 @@ fc-cache -f >/dev/null 2>&1 || true
 {
   echo "manim=$(manim --version)"
   echo "lualatex=$(lualatex --version | head -n 1)"
-  echo "xcharter_text_package=$(kpsewhich XCharter.sty)"
-  echo "xcharter_math_file=/usr/local/share/fonts/figurize/XCharter-Math.otf"
-  echo "luatex85=$(kpsewhich luatex85.sty)"
+  echo "xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf"
+  echo "xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf"
   echo "dvisvgm=$(dvisvgm --version | head -n 1)"
 } > artifact/font-and-runtime-report.txt
 
 cat artifact/font-and-runtime-report.txt
 
+test -s /usr/local/share/fonts/figurize/XCharter-Roman.otf
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
-test -n "$(kpsewhich XCharter.sty)"
-test -n "$(kpsewhich luatex85.sty)"
 
 manim -ql -s --format=png --disable_caching \
   --media_dir artifact/media-preview \
