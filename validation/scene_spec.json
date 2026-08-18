@@ -1,0 +1,19 @@
+{
+  "version": "1.0",
+  "scene_id": "function_signed_area",
+  "recipe": "function.signed_area",
+  "input": {
+    "expression": "x**3 - 2*x",
+    "label": "f",
+    "bounds": [-2.0, 2.0]
+  },
+  "viewport": {
+    "x_min": -2.5,
+    "x_max": 2.5,
+    "y_min": -3.4,
+    "y_max": 3.4
+  },
+  "export": {
+    "transparent": true
+  }
+}
