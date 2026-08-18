@@ -1,7 +1,5 @@
 manim=Manim Community v0.20.1
-lualatex=This is LuaHBTeX, Version 1.22.0 (TeX Live 2025)
+xelatex=XeTeX 3.141592653-2.6-0.999997 (TeX Live 2025)
 xcharter_roman=/usr/local/share/fonts/figurize/XCharter-Roman.otf
 xcharter_math=/usr/local/share/fonts/figurize/XCharter-Math.otf
-luatex85=/usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
-texinputs=/usr/local/share/texmf/tex/generic/luatex85//:
 dvisvgm=dvisvgm 3.4.3
