@@ -19,10 +19,9 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
   texlive-latex-extra \
   dvisvgm
 
-# Install XCharter, XCharter Math, and the small luatex85 compatibility package
-# only in the ephemeral CI container. None of these files are committed or
-# included in the published artifact.
-install -d /usr/local/share/fonts/figurize /tmp/xcharter /tmp/luatex85
+# Install XCharter and XCharter Math only in the ephemeral CI container.
+# Font files are neither committed nor included in the published artifact.
+install -d /usr/local/share/fonts/figurize /tmp/xcharter
 curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter.zip \
   --output /tmp/xcharter.zip
@@ -33,12 +32,12 @@ curl --fail --location --retry 4 \
   https://mirrors.ctan.org/fonts/xcharter-math/XCharter-Math.otf \
   --output /usr/local/share/fonts/figurize/XCharter-Math.otf
 
-curl --fail --location --retry 4 \
-  https://mirrors.ctan.org/macros/generic/luatex85.zip \
-  --output /tmp/luatex85.zip
-unzip -q /tmp/luatex85.zip -d /tmp/luatex85
+# Manim's LuaLaTeX template imports luatex85. Current TeX Live images may not
+# ship it by default, so install the single compatibility style from CTAN.
 install -d /usr/local/share/texmf/tex/generic/luatex85
-find /tmp/luatex85 -type f -name 'luatex85.sty' -exec cp {} /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty \;
+curl --fail --location --retry 4 \
+  https://mirrors.ctan.org/macros/generic/luatex85/luatex85.sty \
+  --output /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
 mktexlsr /usr/local/share/texmf >/dev/null
 fc-cache -f >/dev/null 2>&1 || true
 
@@ -55,6 +54,7 @@ cat artifact/font-and-runtime-report.txt
 
 test -s /usr/local/share/fonts/figurize/XCharter-Roman.otf
 test -s /usr/local/share/fonts/figurize/XCharter-Math.otf
+test -s /usr/local/share/texmf/tex/generic/luatex85/luatex85.sty
 test -n "$(kpsewhich luatex85.sty)"
 
 manim -ql -s --format=png --disable_caching \
