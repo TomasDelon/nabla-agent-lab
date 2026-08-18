@@ -31,9 +31,6 @@ jobs:
         run: |
           set -euo pipefail
           echo "3410aa3390c9265b552e92fe7cc94f1435e7d15864f039be45f6b910303a6a50  engine-source/part-07a.b64" | sha256sum --check
-          # part-07b is the corrected 4,000-character second half followed by
-          # the original 2,204-character final chunk. The authoritative check
-          # is the SHA-256 of the reconstructed ZIP below.
           test "$(wc -c < engine-source/part-07b.b64)" -eq 6204
           cat \
             engine-source/part-00.b64 \
@@ -60,14 +57,21 @@ jobs:
       - name: Run tests, render every scene, validate, and package
         run: |
           set -euo pipefail
-          docker run --rm \
+          cid="$(docker create \
             --user root \
             --cpus 4 \
             --memory 7g \
             --pids-limit 1024 \
-            -v "$PWD/figurize-engine/artifacts:/work/artifacts" \
-            figurize-engine-v1:ci 2>&1 | tee ci-logs/engine-ci.log
-          sudo chown -R "$USER:$USER" figurize-engine/artifacts
+            figurize-engine-v1:ci)"
+          cleanup() {
+            docker rm -f "$cid" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          docker start -a "$cid" 2>&1 | tee ci-logs/engine-ci.log
+          rm -rf figurize-engine/artifacts
+          mkdir -p figurize-engine/artifacts
+          docker cp "$cid:/work/artifacts/." figurize-engine/artifacts/
+          test -f figurize-engine/artifacts/dist/figurize-math-drawing-engine-v1.0.0.zip
 
       - name: Display final manifest and tests
         if: success()
@@ -75,7 +79,6 @@ jobs:
           cat figurize-engine/artifacts/manifest.json
           printf '\n--- tests ---\n'
           cat figurize-engine/artifacts/test-results.txt
-          test -f figurize-engine/artifacts/dist/figurize-math-drawing-engine-v1.0.0.zip
 
       - name: Upload complete validated engine
         if: success()
