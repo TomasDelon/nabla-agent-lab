@@ -13,7 +13,10 @@ BERTAULT_WARM_RED = "#B45F4D"
 
 
 def xcharter_template() -> TexTemplate:
-    template = TexTemplate(tex_compiler="lualatex", output_format=".pdf")
+    # Manim officially supports XeLaTeX with .xdv output. This keeps the
+    # OpenType XCharter + XCharter Math stack without LuaLaTeX compatibility
+    # packages that are irrelevant to Figurize itself.
+    template = TexTemplate(tex_compiler="xelatex", output_format=".xdv")
     template.add_to_preamble(r"\usepackage{fontspec}")
     template.add_to_preamble(r"\usepackage{unicode-math}")
     template.add_to_preamble(
